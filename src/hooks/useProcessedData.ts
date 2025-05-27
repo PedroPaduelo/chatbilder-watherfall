@@ -8,8 +8,6 @@ export const useProcessedData = (
 ) => {
   return useMemo(() => {
     let cumulative = 0;
-    // Use a fixed width for calculations while maintaining responsive display
-    const calculationWidth = 900;
     const chartHeight = dimensions.height - dimensions.margin.top - dimensions.margin.bottom;
     
     // Group data by group field
