@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import type { DataRow, ChartSettings, ChartDimensions } from '../types';
+import type { DataRow, ChartSettings } from '../types';
 import { useProcessedData } from '../hooks/useProcessedData';
+import { useChartDimensions } from '../hooks/useChartDimensions';
 import { adjustColor, formatValue } from '../utils/helpers';
+import CategoryLabels from './CategoryLabels';
 
 interface WaterfallChartProps {
   data: DataRow[];
@@ -12,12 +14,8 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
   const [hoveredBar, setHoveredBar] = useState<string | null>(null);
   const [hoveredSegment, setHoveredSegment] = useState<{ barId: string, segmentIndex: number } | null>(null);
   
-  const dimensions: ChartDimensions = { 
-    width: 900, // Fixed width for calculations
-    height: 400, // Reduced height for better fit
-    margin: { top: 40, right: 40, bottom: 60, left: 60 } 
-  };
-  
+  // Use dynamic dimensions that adjust for rotated labels
+  const dimensions = useChartDimensions(data, settings);
   const processedData = useProcessedData(data, settings, dimensions);
 
   return (
@@ -35,7 +33,7 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
         {/* Grid lines */}
         {settings.showGridlines && (
           <g opacity={0.1}>
-            {[0, 0.2, 0.4, 0.6, 0.8, 1.0].map((val, index) => (
+            {[0, 0.2, 0.4, 0.6, 0.8, 1.0].map((val) => (
               <line
                 key={`grid-${val}`}
                 x1={dimensions.margin.left}
@@ -198,33 +196,16 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
           </g>
         )}
         
-        {/* Category labels */}
-        {settings.showCategories && (
-          <g>
-            {processedData.map((bar) => (
-              <text
-                key={`label-${bar.id}`}
-                x={bar.x + bar.width / 2}
-                y={dimensions.height - dimensions.margin.bottom + 20}
-                textAnchor={settings.categoryLabelRotation > 0 ? "end" : "middle"}
-                fontSize="12"
-                fill="#374151"
-                transform={settings.categoryLabelRotation > 0 ? 
-                  `rotate(-${settings.categoryLabelRotation}, ${bar.x + bar.width / 2}, ${dimensions.height - dimensions.margin.bottom + 20})` : 
-                  undefined}
-                style={{
-                  transformOrigin: `${bar.x + bar.width / 2}px ${dimensions.height - dimensions.margin.bottom + 20}px`
-                }}
-              >
-                {bar.category}
-              </text>
-            ))}
-          </g>
-        )}
+        {/* Category labels - Now using the modular component */}
+        <CategoryLabels 
+          processedData={processedData}
+          settings={settings}
+          dimensions={dimensions}
+        />
         
         {/* Y axis labels */}
         <g>
-          {[0, 0.2, 0.4, 0.6, 0.8, 1.0].map((val, index) => (
+          {[0, 0.2, 0.4, 0.6, 0.8, 1.0].map((val) => (
             <text
               key={`y-label-${val}`}
               x={dimensions.margin.left - 10}

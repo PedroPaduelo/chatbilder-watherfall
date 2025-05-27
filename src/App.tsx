@@ -202,19 +202,6 @@ const App = () => {
         <header className="bg-white rounded-lg shadow p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Waterfall Chart Builder</h1>
           <p className="text-gray-600">Create professional waterfall charts with stacked bars support</p>
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
-            <h3 className="font-semibold text-blue-900 mb-2">📊 Stacked Bars Feature</h3>
-            <p className="text-sm text-blue-800">
-              Baseline and Total bars now support stacked segments! Click the arrow next to baseline/total rows 
-              to add segments with individual categories, values, and colors.
-            </p>
-          </div>
-          <div className="mt-3 p-4 bg-yellow-50 border border-yellow-200 rounded">
-            <p className="text-sm text-yellow-800">
-              <strong>Nota:</strong> Esta implementação está preparada para usar a biblioteca visx. 
-              Para usar em produção, instale: <code className="bg-yellow-100 px-1 rounded">npm install @visx/scale @visx/shape @visx/axis @visx/group @visx/tooltip</code>
-            </p>
-          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
