@@ -14,21 +14,47 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
   const [hoveredBar, setHoveredBar] = useState<string | null>(null);
   const [hoveredSegment, setHoveredSegment] = useState<{ barId: string, segmentIndex: number } | null>(null);
   
-  // Use dynamic dimensions that adjust for rotated labels
+  // Calculate chart dimensions based on settings
+  const calculateChartDimensions = () => {
+    const baseWidth = settings.chartDimensions?.width || 900;
+    const baseHeight = settings.chartDimensions?.height || 500;
+    
+    if (settings.chartDimensions?.autoResize) {
+      return { width: baseWidth, height: baseHeight };
+    }
+    
+    // Apply aspect ratio if set
+    if (settings.chartDimensions?.aspectRatio && settings.chartDimensions.aspectRatio !== 'auto' && settings.chartDimensions.aspectRatio !== 'custom') {
+      const aspectRatios = {
+        '16:9': 16 / 9,
+        '4:3': 4 / 3,
+        '1:1': 1
+      };
+      
+      const ratio = aspectRatios[settings.chartDimensions.aspectRatio as keyof typeof aspectRatios];
+      if (ratio) {
+        return { width: baseWidth, height: baseWidth / ratio };
+      }
+    }
+    
+    return { width: baseWidth, height: baseHeight };
+  };
+  
+  const chartDims = calculateChartDimensions();
   const dimensions = useChartDimensions(data, settings);
   const processedData = useProcessedData(data, settings, dimensions);
 
   return (
     <div className="relative w-full">
       <svg 
-        width="100%" 
-        height={dimensions.height}
-        viewBox={`0 0 900 ${dimensions.height}`}
+        width={settings.chartDimensions?.autoResize ? "100%" : chartDims.width} 
+        height={chartDims.height}
+        viewBox={`0 0 ${chartDims.width} ${chartDims.height}`}
         className="max-w-full h-auto"
       >
         <title>Waterfall Chart with Stacked Bars</title>
         {/* Background */}
-        <rect width={dimensions.width} height={dimensions.height} fill="transparent" />
+        <rect width={chartDims.width} height={chartDims.height} fill="transparent" />
         
         {/* Grid lines */}
         {settings.showGridlines && (
@@ -37,9 +63,9 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
               <line
                 key={`grid-${val}`}
                 x1={dimensions.margin.left}
-                x2={dimensions.width - dimensions.margin.right}
-                y1={dimensions.margin.top + (1 - val) * (dimensions.height - dimensions.margin.top - dimensions.margin.bottom)}
-                y2={dimensions.margin.top + (1 - val) * (dimensions.height - dimensions.margin.top - dimensions.margin.bottom)}
+                x2={chartDims.width - dimensions.margin.right}
+                y1={dimensions.margin.top + (1 - val) * (chartDims.height - dimensions.margin.top - dimensions.margin.bottom)}
+                y2={dimensions.margin.top + (1 - val) * (chartDims.height - dimensions.margin.top - dimensions.margin.bottom)}
                 stroke="#9CA3AF"
                 strokeWidth={1}
               />
@@ -52,9 +78,9 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
           {/* X axis */}
           <line
             x1={dimensions.margin.left}
-            x2={dimensions.width - dimensions.margin.right}
-            y1={dimensions.height - dimensions.margin.bottom}
-            y2={dimensions.height - dimensions.margin.bottom}
+            x2={chartDims.width - dimensions.margin.right}
+            y1={chartDims.height - dimensions.margin.bottom}
+            y2={chartDims.height - dimensions.margin.bottom}
             stroke="#374151"
             strokeWidth={1}
           />
@@ -64,7 +90,7 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
             x1={dimensions.margin.left}
             x2={dimensions.margin.left}
             y1={dimensions.margin.top}
-            y2={dimensions.height - dimensions.margin.bottom}
+            y2={chartDims.height - dimensions.margin.bottom}
             stroke="#374151"
             strokeWidth={1}
           />
@@ -99,15 +125,15 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
                       }}
                     />
                     
-                    {/* Segment labels */}
+                    {/* Segment labels with custom styling */}
                     {settings.showSegmentLabels && segment.height > 20 && (
                       <text
                         x={bar.x + bar.width / 2}
                         y={dimensions.margin.top + segment.y + segment.height / 2}
                         textAnchor="middle"
                         alignmentBaseline="middle"
-                        fontSize="11"
-                        fill="white"
+                        fontSize={settings.labelSettings?.segmentLabelFontSize || 10}
+                        fill={settings.labelSettings?.segmentLabelFontColor || '#FFFFFF'}
                         style={{ pointerEvents: 'none' }}
                       >
                         {formatValue(segment.valor, settings.valuePrefix, settings.valueSuffix)}
@@ -136,28 +162,29 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
                 />
               )}
               
-              {/* Value labels (for non-stacked bars or total value) */}
+              {/* Value labels with custom styling (for non-stacked bars or total value) */}
               {settings.showValues && (!bar.segments || bar.segments.length === 0) && (
                 <text
                   x={bar.x + bar.width / 2}
                   y={bar.y - 5}
                   textAnchor="middle"
-                  fontSize="12"
-                  fill="#374151"
+                  fontSize={settings.labelSettings?.valueFontSize || 14}
+                  fill={settings.labelSettings?.valueFontColor || '#374151'}
+                  fontWeight={settings.labelSettings?.valueFontWeight || 'bold'}
                 >
                   {formatValue(bar.value, settings.valuePrefix, settings.valueSuffix)}
                 </text>
               )}
               
-              {/* Total value for stacked bars */}
+              {/* Total value for stacked bars with custom styling */}
               {settings.showValues && bar.segments && bar.segments.length > 0 && (
                 <text
                   x={bar.x + bar.width / 2}
                   y={bar.y - 5}
                   textAnchor="middle"
-                  fontSize="12"
-                  fill="#374151"
-                  fontWeight="bold"
+                  fontSize={settings.labelSettings?.valueFontSize || 14}
+                  fill={settings.labelSettings?.valueFontColor || '#374151'}
+                  fontWeight={settings.labelSettings?.valueFontWeight || 'bold'}
                 >
                   {formatValue(bar.value, settings.valuePrefix, settings.valueSuffix)}
                 </text>
@@ -203,13 +230,13 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
           dimensions={dimensions}
         />
         
-        {/* Y axis labels */}
+        {/* Y axis labels with custom styling */}
         <g>
           {[0, 0.2, 0.4, 0.6, 0.8, 1.0].map((val) => (
             <text
               key={`y-label-${val}`}
               x={dimensions.margin.left - 10}
-              y={dimensions.margin.top + (1 - val) * (dimensions.height - dimensions.margin.top - dimensions.margin.bottom)}
+              y={dimensions.margin.top + (1 - val) * (chartDims.height - dimensions.margin.top - dimensions.margin.bottom)}
               textAnchor="end"
               fontSize="12"
               fill="#374151"

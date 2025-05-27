@@ -43,6 +43,24 @@ export interface ChartSettings {
   valuePrefix: string;
   valueSuffix: string;
   showGridlines: boolean;
+  // New label customization settings
+  labelSettings: {
+    categoryFontSize: number;
+    categoryFontColor: string;
+    categoryFontWeight: 'normal' | 'bold' | 'bolder';
+    valueFontSize: number;
+    valueFontColor: string;
+    valueFontWeight: 'normal' | 'bold' | 'bolder';
+    segmentLabelFontSize: number;
+    segmentLabelFontColor: string;
+  };
+  // Chart dimensions settings
+  chartDimensions: {
+    width: number;
+    height: number;
+    autoResize: boolean;
+    aspectRatio: 'auto' | '16:9' | '4:3' | '1:1' | 'custom';
+  };
   colors: {
     baseline: string;
     increase: string;

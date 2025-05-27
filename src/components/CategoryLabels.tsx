@@ -37,8 +37,9 @@ export const CategoryLabels: React.FC<CategoryLabelsProps> = ({
             x={centerX}
             y={labelY}
             textAnchor={textAnchor}
-            fontSize="12"
-            fill="#374151"
+            fontSize={settings.labelSettings?.categoryFontSize || 12}
+            fill={settings.labelSettings?.categoryFontColor || '#374151'}
+            fontWeight={settings.labelSettings?.categoryFontWeight || 'normal'}
             transform={
               settings.categoryLabelRotation > 0
                 ? `rotate(-${settings.categoryLabelRotation}, ${centerX}, ${labelY})`

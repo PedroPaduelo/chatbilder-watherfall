@@ -13,6 +13,24 @@ export const defaultSettings: ChartSettings = {
   valuePrefix: '',
   valueSuffix: '',
   showGridlines: true,
+  // New label customization settings
+  labelSettings: {
+    categoryFontSize: 12,
+    categoryFontColor: '#374151',
+    categoryFontWeight: 'normal',
+    valueFontSize: 14,
+    valueFontColor: '#111827',
+    valueFontWeight: 'bold',
+    segmentLabelFontSize: 10,
+    segmentLabelFontColor: '#FFFFFF',
+  },
+  // Chart dimensions settings
+  chartDimensions: {
+    width: 900,
+    height: 500,
+    autoResize: true,
+    aspectRatio: 'auto',
+  },
   colors: {
     baseline: '#4B5563',
     increase: '#10B981',

@@ -8,7 +8,9 @@ import {
   ChevronRight,
   Settings,
   Info,
-  Sliders
+  Sliders,
+  Maximize2,
+  Edit3
 } from 'lucide-react';
 import type { ChartSettings } from '../types';
 
@@ -191,7 +193,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ label, value, onChange }) => 
 };
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChange }) => {
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: unknown) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
       const parentKey = parent as keyof ChartSettings;
@@ -235,6 +237,22 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
                   valuePrefix: '',
                   valueSuffix: '',
                   showGridlines: true,
+                  labelSettings: {
+                    categoryFontSize: 12,
+                    categoryFontColor: '#374151',
+                    categoryFontWeight: 'normal',
+                    valueFontSize: 14,
+                    valueFontColor: '#111827',
+                    valueFontWeight: 'bold',
+                    segmentLabelFontSize: 10,
+                    segmentLabelFontColor: '#FFFFFF',
+                  },
+                  chartDimensions: {
+                    width: 900,
+                    height: 500,
+                    autoResize: true,
+                    aspectRatio: 'auto',
+                  },
                   colors: {
                     baseline: '#4B5563',
                     increase: '#10B981',
@@ -507,6 +525,205 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
                 />
               ))}
             </div>
+          </SettingSection>
+
+          {/* Aparência dos Rótulos */}
+          <SettingSection
+            title="Aparência dos Rótulos"
+            icon={<Edit3 className="text-indigo-600" size={16} />}
+            tooltip="Personalize o tamanho, cor e peso das fontes dos rótulos"
+          >
+            {/* Category Labels */}
+            <div className="space-y-3 pb-3 border-b border-gray-100">
+              <h4 className="text-sm font-semibold text-gray-800">Rótulos das Categorias</h4>
+              
+              <RangeSlider
+                label="Tamanho da Fonte"
+                value={settings.labelSettings?.categoryFontSize || 12}
+                min={8}
+                max={24}
+                unit="px"
+                onChange={value => handleChange('labelSettings.categoryFontSize', value)}
+                tooltip="Tamanho da fonte dos nomes das categorias"
+              />
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cor da Fonte
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={settings.labelSettings?.categoryFontColor || '#374151'}
+                    onChange={e => handleChange('labelSettings.categoryFontColor', e.target.value)}
+                    className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                  />
+                  <span className="text-xs font-mono text-gray-500">
+                    {settings.labelSettings?.categoryFontColor || '#374151'}
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Peso da Fonte
+                </label>
+                <select
+                  value={settings.labelSettings?.categoryFontWeight || 'normal'}
+                  onChange={e => handleChange('labelSettings.categoryFontWeight', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="bold">Negrito</option>
+                  <option value="bolder">Extra Negrito</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Value Labels */}
+            <div className="space-y-3 py-3 border-b border-gray-100">
+              <h4 className="text-sm font-semibold text-gray-800">Rótulos dos Valores</h4>
+              
+              <RangeSlider
+                label="Tamanho da Fonte"
+                value={settings.labelSettings?.valueFontSize || 14}
+                min={8}
+                max={24}
+                unit="px"
+                onChange={value => handleChange('labelSettings.valueFontSize', value)}
+                tooltip="Tamanho da fonte dos valores nas barras"
+              />
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cor da Fonte
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={settings.labelSettings?.valueFontColor || '#111827'}
+                    onChange={e => handleChange('labelSettings.valueFontColor', e.target.value)}
+                    className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                  />
+                  <span className="text-xs font-mono text-gray-500">
+                    {settings.labelSettings?.valueFontColor || '#111827'}
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Peso da Fonte
+                </label>
+                <select
+                  value={settings.labelSettings?.valueFontWeight || 'bold'}
+                  onChange={e => handleChange('labelSettings.valueFontWeight', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="bold">Negrito</option>
+                  <option value="bolder">Extra Negrito</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Segment Labels */}
+            <div className="space-y-3 pt-3">
+              <h4 className="text-sm font-semibold text-gray-800">Rótulos dos Segmentos</h4>
+              
+              <RangeSlider
+                label="Tamanho da Fonte"
+                value={settings.labelSettings?.segmentLabelFontSize || 10}
+                min={6}
+                max={18}
+                unit="px"
+                onChange={value => handleChange('labelSettings.segmentLabelFontSize', value)}
+                tooltip="Tamanho da fonte dos rótulos dentro dos segmentos"
+              />
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cor da Fonte
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={settings.labelSettings?.segmentLabelFontColor || '#FFFFFF'}
+                    onChange={e => handleChange('labelSettings.segmentLabelFontColor', e.target.value)}
+                    className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                  />
+                  <span className="text-xs font-mono text-gray-500">
+                    {settings.labelSettings?.segmentLabelFontColor || '#FFFFFF'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </SettingSection>
+
+          {/* Dimensões do Gráfico */}
+          <SettingSection
+            title="Dimensões do Gráfico"
+            icon={<Maximize2 className="text-cyan-600" size={16} />}
+            tooltip="Configure o tamanho do gráfico e proporções"
+          >
+            <CheckboxToggle
+              label="Redimensionamento Automático"
+              checked={settings.chartDimensions?.autoResize || true}
+              onChange={checked => handleChange('chartDimensions.autoResize', checked)}
+              tooltip="Ajusta automaticamente o tamanho do gráfico ao container"
+            />
+
+            {!settings.chartDimensions?.autoResize && (
+              <>
+                <RangeSlider
+                  label="Largura"
+                  value={settings.chartDimensions?.width || 900}
+                  min={400}
+                  max={1600}
+                  step={50}
+                  unit="px"
+                  onChange={value => handleChange('chartDimensions.width', value)}
+                  tooltip="Largura do gráfico em pixels"
+                />
+                
+                <RangeSlider
+                  label="Altura"
+                  value={settings.chartDimensions?.height || 500}
+                  min={300}
+                  max={1000}
+                  step={25}
+                  unit="px"
+                  onChange={value => handleChange('chartDimensions.height', value)}
+                  tooltip="Altura do gráfico em pixels"
+                />
+              </>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Proporção
+              </label>
+              <select
+                value={settings.chartDimensions?.aspectRatio || 'auto'}
+                onChange={e => handleChange('chartDimensions.aspectRatio', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="auto">Automático</option>
+                <option value="16:9">16:9 (Widescreen)</option>
+                <option value="4:3">4:3 (Clássico)</option>
+                <option value="1:1">1:1 (Quadrado)</option>
+                <option value="custom">Personalizado</option>
+              </select>
+            </div>
+
+            {settings.chartDimensions?.aspectRatio !== 'auto' && settings.chartDimensions?.aspectRatio !== 'custom' && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Proporção {settings.chartDimensions.aspectRatio}:</strong><br/>
+                  A altura será ajustada automaticamente para manter a proporção selecionada.
+                </p>
+              </div>
+            )}
           </SettingSection>
         </div>
       </div>
