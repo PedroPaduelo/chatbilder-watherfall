@@ -18,13 +18,19 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
   const [hoveredBar, setHoveredBar] = useState<string | null>(null);
   const [hoveredSegment, setHoveredSegment] = useState<{ barId: string, segmentIndex: number } | null>(null);
   
-  // Calculate chart dimensions based on settings
+  // Use the calculated dimensions that prevent X-axis overflow
+  const dimensions = useChartDimensions(data, settings);
+  const processedData = useProcessedData(data, settings, dimensions);
+  
+  // Calculate final chart dimensions based on settings and calculated width
   const chartDimensions = useMemo(() => {
-    const baseWidth = settings.chartDimensions?.width || 900;
-    const baseHeight = settings.chartDimensions?.height || 500;
+    let baseWidth = dimensions.width; // Use calculated width from useChartDimensions
+    let baseHeight = settings.chartDimensions?.height || 500;
     
-    if (settings.chartDimensions?.autoResize) {
-      return { width: baseWidth, height: baseHeight };
+    // Override with user settings if not auto-resize
+    if (!settings.chartDimensions?.autoResize) {
+      baseWidth = settings.chartDimensions?.width || dimensions.width;
+      baseHeight = settings.chartDimensions?.height || 500;
     }
     
     // Apply aspect ratio if set
@@ -39,23 +45,21 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
       
       const ratio = aspectRatios[settings.chartDimensions.aspectRatio as keyof typeof aspectRatios];
       if (ratio) {
-        return { width: baseWidth, height: baseWidth / ratio };
+        baseHeight = baseWidth / ratio;
       }
     }
     
     return { width: baseWidth, height: baseHeight };
-  }, [settings.chartDimensions]);
-  
-  const dimensions = useChartDimensions(data, settings);
-  const processedData = useProcessedData(data, settings, dimensions);
+  }, [dimensions.width, settings.chartDimensions]);
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full overflow-x-auto">
       <svg 
         width={settings.chartDimensions?.autoResize ? "100%" : chartDimensions.width} 
         height={chartDimensions.height}
         viewBox={`0 0 ${chartDimensions.width} ${chartDimensions.height}`}
         className="max-w-full h-auto"
+        style={{ minWidth: chartDimensions.width }}
       >
         <title>Waterfall Chart with Stacked Bars</title>
         
