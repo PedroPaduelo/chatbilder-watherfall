@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { Download, Upload, Image, FileText } from 'lucide-react';
-import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import WaterfallChart from './components/WaterfallChart';
 import DataEditor from './components/DataEditor';

@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState, useRef } from 'react';
-import { Upload, Download, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, Download, AlertCircle, CheckCircle } from 'lucide-react';
 import Papa from 'papaparse';
 import type { DataRow } from '../types';
 

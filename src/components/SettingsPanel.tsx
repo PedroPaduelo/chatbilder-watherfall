@@ -1,11 +1,9 @@
 import type React from 'react';
 import { useState } from 'react';
 import { 
-  BarChart3, 
   Palette, 
   Type, 
   Eye, 
-  Grid3X3, 
   ChevronDown, 
   ChevronRight,
   Settings,
@@ -196,13 +194,19 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
   const handleChange = (field: string, value: any) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
-      onSettingsChange({
-        ...settings,
-        [parent]: {
-          ...settings[parent as keyof ChartSettings],
-          [child]: value
-        }
-      });
+      const parentKey = parent as keyof ChartSettings;
+      const parentValue = settings[parentKey];
+      
+      // Type-safe spread operation
+      if (typeof parentValue === 'object' && parentValue !== null) {
+        onSettingsChange({
+          ...settings,
+          [parent]: {
+            ...parentValue,
+            [child]: value
+          }
+        });
+      }
     } else {
       onSettingsChange({ ...settings, [field]: value });
     }
