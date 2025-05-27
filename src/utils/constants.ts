@@ -13,6 +13,7 @@ export const defaultSettings: ChartSettings = {
   valuePrefix: '',
   valueSuffix: '',
   showGridlines: true,
+  showAxes: true, // Eixos visíveis por padrão
   // New label customization settings
   labelSettings: {
     categoryFontSize: 12,
@@ -67,3 +68,51 @@ export const initialData: DataRow[] = [
     ]
   }
 ];
+
+// UI Constants
+export const UI_CONSTANTS = {
+  CHART: {
+    DEFAULT_WIDTH: 900,
+    DEFAULT_HEIGHT: 500,
+    MIN_SEGMENT_HEIGHT: 20,
+    GRID_VALUES: [0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    TRANSITION_DURATION: '0.2s',
+  },
+  COLORS: {
+    GRID_LINE: '#9CA3AF',
+    AXIS: '#374151',
+    CONNECTOR_LINE: '#9CA3AF',
+    TOOLTIP_BG: '#1F2937',
+    HOVER_OPACITY: 0.8,
+  },
+  SPACING: {
+    LABEL_OFFSET: 5,
+    TOOLTIP_OFFSET: 10,
+    SEGMENT_LABEL_MIN_HEIGHT: 20,
+  },
+  FILES: {
+    SUPPORTED_EXTENSIONS: ['csv', 'xlsx', 'xls'],
+    DEFAULT_FILENAMES: {
+      PNG: 'waterfall-chart.png',
+      SVG: 'waterfall-chart.svg',
+      JSON: 'waterfall-chart-data.json',
+      HTML: 'waterfall-chart.html',
+    },
+  },
+  NOTIFICATIONS: {
+    DEFAULT_DURATION: 5000,
+    ERROR_DURATION: 0, // Don't auto-close errors
+  },
+} as const;
+
+// Validation Constants
+export const VALIDATION = {
+  MIN_BAR_WIDTH: 10,
+  MAX_BAR_WIDTH: 200,
+  MIN_BAR_SPACING: 0,
+  MAX_BAR_SPACING: 100,
+  MIN_BORDER_RADIUS: 0,
+  MAX_BORDER_RADIUS: 20,
+  MIN_FONT_SIZE: 8,
+  MAX_FONT_SIZE: 32,
+} as const;

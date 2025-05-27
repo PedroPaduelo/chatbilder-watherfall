@@ -43,6 +43,7 @@ export interface ChartSettings {
   valuePrefix: string;
   valueSuffix: string;
   showGridlines: boolean;
+  showAxes: boolean; // Nova opção para mostrar/ocultar eixos
   // New label customization settings
   labelSettings: {
     categoryFontSize: number;

@@ -237,6 +237,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
                   valuePrefix: '',
                   valueSuffix: '',
                   showGridlines: true,
+                  showAxes: true, // Incluindo a nova propriedade
                   labelSettings: {
                     categoryFontSize: 12,
                     categoryFontColor: '#374151',
@@ -361,6 +362,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
               checked={settings.showGridlines}
               onChange={checked => handleChange('showGridlines', checked)}
               tooltip="Linhas horizontais de referência"
+            />
+            
+            <CheckboxToggle
+              label="Eixos X e Y"
+              checked={settings.showAxes}
+              onChange={checked => handleChange('showAxes', checked)}
+              tooltip="Linhas dos eixos horizontal (X) e vertical (Y)"
             />
           </SettingSection>
 
