@@ -281,7 +281,7 @@ const App = () => {
                 </button>
               </div>
             </div>
-            <div ref={chartRef} className="border rounded-lg p-4 bg-gray-50">
+            <div ref={chartRef} className="border rounded-lg p-4 bg-gray-50 overflow-hidden">
               <WaterfallChart data={data} settings={settings} />
             </div>
           </div>

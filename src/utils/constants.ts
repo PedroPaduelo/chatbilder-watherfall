@@ -9,6 +9,7 @@ export const defaultSettings: ChartSettings = {
   showValues: true,
   showCategories: true,
   showSegmentLabels: true,
+  categoryLabelRotation: 0, // Sem rotação por padrão
   valuePrefix: '',
   valueSuffix: '',
   showGridlines: true,

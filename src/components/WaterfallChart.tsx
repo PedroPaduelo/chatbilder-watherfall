@@ -13,16 +13,21 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
   const [hoveredSegment, setHoveredSegment] = useState<{ barId: string, segmentIndex: number } | null>(null);
   
   const dimensions: ChartDimensions = { 
-    width: 900, 
-    height: 500, 
+    width: 900, // Fixed width for calculations
+    height: 400, // Reduced height for better fit
     margin: { top: 40, right: 40, bottom: 60, left: 60 } 
   };
   
   const processedData = useProcessedData(data, settings, dimensions);
 
   return (
-    <div className="relative">
-      <svg width={dimensions.width} height={dimensions.height}>
+    <div className="relative w-full">
+      <svg 
+        width="100%" 
+        height={dimensions.height}
+        viewBox={`0 0 900 ${dimensions.height}`}
+        className="max-w-full h-auto"
+      >
         <title>Waterfall Chart with Stacked Bars</title>
         {/* Background */}
         <rect width={dimensions.width} height={dimensions.height} fill="transparent" />
@@ -201,9 +206,15 @@ const WaterfallChart = ({ data, settings }: WaterfallChartProps) => {
                 key={`label-${bar.id}`}
                 x={bar.x + bar.width / 2}
                 y={dimensions.height - dimensions.margin.bottom + 20}
-                textAnchor="middle"
+                textAnchor={settings.categoryLabelRotation > 0 ? "end" : "middle"}
                 fontSize="12"
                 fill="#374151"
+                transform={settings.categoryLabelRotation > 0 ? 
+                  `rotate(-${settings.categoryLabelRotation}, ${bar.x + bar.width / 2}, ${dimensions.height - dimensions.margin.bottom + 20})` : 
+                  undefined}
+                style={{
+                  transformOrigin: `${bar.x + bar.width / 2}px ${dimensions.height - dimensions.margin.bottom + 20}px`
+                }}
               >
                 {bar.category}
               </text>

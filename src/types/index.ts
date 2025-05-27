@@ -39,6 +39,7 @@ export interface ChartSettings {
   showValues: boolean;
   showCategories: boolean;
   showSegmentLabels: boolean;
+  categoryLabelRotation: number; // Ângulo de rotação em graus (0, 45, 90, etc.)
   valuePrefix: string;
   valueSuffix: string;
   showGridlines: boolean;

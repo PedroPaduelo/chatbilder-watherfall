@@ -227,6 +227,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
                   showValues: true,
                   showCategories: true,
                   showSegmentLabels: true,
+                  categoryLabelRotation: 0,
                   valuePrefix: '',
                   valueSuffix: '',
                   showGridlines: true,
@@ -312,6 +313,19 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
               onChange={checked => handleChange('showCategories', checked)}
               tooltip="Nomes das categorias abaixo das barras"
             />
+
+            {settings.showCategories && (
+              <RangeSlider
+                label="Rotação das Categorias"
+                value={settings.categoryLabelRotation}
+                min={0}
+                max={90}
+                step={15}
+                unit="°"
+                onChange={value => handleChange('categoryLabelRotation', value)}
+                tooltip="Ângulo de rotação dos rótulos das categorias"
+              />
+            )}
             
             <CheckboxToggle
               label="Labels dos Segmentos"
