@@ -73,14 +73,14 @@ const UniversalImporter: React.FC<UniversalImporterProps> = ({
           skipEmptyLines: true,
           transform: (value, field) => {
             // Convert numeric fields
-            if (['value', 'segment_valor'].includes(field)) {
-              return parseFloat(value) || 0;
+            if (['value', 'segment_valor'].includes(String(field))) {
+              return parseFloat(String(value)) || 0;
             }
             // Convert boolean fields
-            if (field === 'isSubtotal') {
-              return value.toLowerCase() === 'true';
+            if (String(field) === 'isSubtotal') {
+              return String(value).toLowerCase() === 'true';
             }
-            return value;
+            return String(value);
           }
         });
 

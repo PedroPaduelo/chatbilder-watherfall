@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import type { ChartType, ChartData, ChartSettings, ChartDimensions } from '../types';
+import type { ChartType, ChartData, ChartSettings, ChartDimensions, DataRow } from '../types';
 import WaterfallChart from './WaterfallChart';
 import SankeyChart from './SankeyChart';
 import StackedBarChart from './StackedBarChart';
@@ -13,7 +13,7 @@ interface UniversalChartRendererProps {
   data: ChartData;
   settings: ChartSettings;
   dimensions: ChartDimensions;
-  onDataChange?: (data: any) => void;
+  onDataChange?: (data: DataRow[]) => void;
   onSettingsChange?: (settings: ChartSettings) => void;
   isConfigModalOpen?: boolean;
   onConfigModalClose?: () => void;
@@ -44,10 +44,6 @@ const UniversalChartRenderer: React.FC<UniversalChartRendererProps> = ({
     if (onSettingsChange) {
       onSettingsChange(newSettings);
     }
-  };
-
-  const handleDataChange = (newData: DataRow[]) => {
-    setData(newData);
   };
 
   // Get the appropriate data for the current chart type

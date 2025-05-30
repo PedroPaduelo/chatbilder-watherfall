@@ -1,4 +1,4 @@
-import type { DataRow, SankeyData, ChartType } from '../types';
+import type { SankeyData, ChartType } from '../types';
 
 export interface ValidationResult {
   valid: boolean;

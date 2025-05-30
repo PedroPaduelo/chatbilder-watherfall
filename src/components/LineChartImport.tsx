@@ -1,22 +1,23 @@
-import React from 'react';
 import UniversalImporter from './UniversalImporter';
-import { ChartData, ChartSettings } from '../types';
-import { DEFAULT_CHART_SETTINGS } from '../utils/constants';
+import { DataRow, SankeyData, ChartSettings } from '../types';
+import { defaultSettings } from '../utils/constants';
 
 interface LineChartImportProps {
-  onImport: (data: ChartData[], settings: ChartSettings) => void;
+  onImport: (data: DataRow[], settings: ChartSettings) => void;
+  onClose?: () => void;
 }
 
-export default function LineChartImport({ onImport }: LineChartImportProps) {
-  const handleImport = (data: ChartData[], settings: ChartSettings) => {
-    onImport(data, settings);
+export default function LineChartImport({ onImport, onClose }: LineChartImportProps) {
+  const handleImport = (data: DataRow[] | SankeyData) => {
+    // For line charts, we expect DataRow[]
+    onImport(data as DataRow[], defaultSettings);
   };
 
   return (
     <UniversalImporter
-      onImport={handleImport}
       chartType="line"
-      defaultSettings={DEFAULT_CHART_SETTINGS}
+      onDataImported={handleImport}
+      onClose={onClose}
     />
   );
 }

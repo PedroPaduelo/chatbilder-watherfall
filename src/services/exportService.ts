@@ -1,4 +1,4 @@
-import type { DataRow, ChartSettings, SankeyData } from '../types';
+import type { DataRow, ChartSettings } from '../types';
 import { UI_CONSTANTS } from '../utils/constants';
 
 export interface ExportData {

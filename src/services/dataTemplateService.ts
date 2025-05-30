@@ -408,24 +408,37 @@ Março,Vendas B2B,16000,Vendas para empresas`,
         break;
 
       // Validate Sankey data structure
-      if (chartType === 'sankey') {
-        if (Array.isArray(data) && data.length > 0) {
-          // Check if data is already in the correct format
-          if (data[0].hasOwnProperty('nodes') && data[0].hasOwnProperty('links')) {
-            const sankeyData = data[0] as { nodes: any[]; links: any[] };
-            return {
-              nodes: sankeyData.nodes || [],
-              links: sankeyData.links || []
-            };
+      case 'sankey':
+        if (typeof data === 'object' && data !== null && !Array.isArray(data) && 'nodes' in data && 'links' in data) {
+          const sankeyData = data as { nodes: any[]; links: any[] };
+          
+          // Validate nodes
+          if (!Array.isArray(sankeyData.nodes)) {
+            errors.push('Nodes devem ser um array');
+          } else {
+            sankeyData.nodes.forEach((node, index) => {
+              if (!node.id) errors.push(`Node ${index} deve ter um ID`);
+              if (!node.name) warnings.push(`Node ${index} deve ter um nome`);
+            });
           }
-          // Convert regular data to Sankey format
-          return {
-            nodes: [],
-            links: []
-          };
+          
+          // Validate links
+          if (!Array.isArray(sankeyData.links)) {
+            errors.push('Links devem ser um array');
+          } else {
+            const nodeIds = sankeyData.nodes.map(n => n.id);
+            sankeyData.links.forEach((link, index) => {
+              if (!link.source) errors.push(`Link ${index} deve ter source`);
+              if (!link.target) errors.push(`Link ${index} deve ter target`);
+              if (typeof link.value !== 'number') errors.push(`Link ${index} deve ter valor numérico`);
+              if (!nodeIds.includes(link.source)) errors.push(`Source "${link.source}" no link ${index} não existe nos nodes`);
+              if (!nodeIds.includes(link.target)) errors.push(`Target "${link.target}" no link ${index} não existe nos nodes`);
+            });
+          }
+        } else {
+          errors.push('Dados Sankey devem ser um objeto com propriedades "nodes" e "links"');
         }
-        return { nodes: [], links: [] };
-      }
+        break;
     }
 
     return {

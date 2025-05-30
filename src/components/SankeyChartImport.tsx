@@ -1,12 +1,12 @@
 import React from 'react';
-import { sankeyData } from '../utils/sampleData';
+import { sankeySampleData } from '../utils/sampleData';
 import { ExportService } from '../services/exportService';
 import { defaultSettings } from '../utils/constants';
 
 const SankeyChartImport: React.FC = () => {
   const handleDownloadCSV = () => {
     // Convert sankey data to CSV format
-    const csvData = sankeyData.nodes.map((node, index) => ({
+    const csvData = sankeySampleData.nodes.map((node: any, index: number) => ({
       id: node.id || `${index + 1}`,
       name: node.name,
       category: node.category || 'default',
@@ -17,7 +17,7 @@ const SankeyChartImport: React.FC = () => {
   };
 
   const handleDownloadJSON = () => {
-    ExportService.exportAsJSON(sankeyData, defaultSettings, 'sankey-chart-sample.json');
+    ExportService.exportAsJSON(sankeySampleData, defaultSettings, 'sankey-chart-sample.json');
   };
 
   return (

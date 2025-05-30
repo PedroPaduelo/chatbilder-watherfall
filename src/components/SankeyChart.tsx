@@ -394,8 +394,8 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
     links.forEach(link => {
       const x0 = link.sourceNode.x + link.sourceNode.width;
       const x1 = link.targetNode.x;
-      const y0 = (link.sy0 + link.sy1) / 2;
-      const y1 = (link.ty0 + link.ty1) / 2;
+      // const y0 = (link.sy0 + link.sy1) / 2;
+      // const y1 = (link.ty0 + link.ty1) / 2;
       
       // Calcular pontos de controle para curvas suaves
       const curvature = 0.5;

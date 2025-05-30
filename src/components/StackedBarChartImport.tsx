@@ -1,22 +1,23 @@
-import React from 'react';
 import UniversalImporter from './UniversalImporter';
-import { ChartData, ChartSettings } from '../types';
-import { DEFAULT_CHART_SETTINGS } from '../utils/constants';
+import { DataRow, SankeyData, ChartSettings } from '../types';
+import { defaultSettings } from '../utils/constants';
 
 interface StackedBarChartImportProps {
-  onImport: (data: ChartData[], settings: ChartSettings) => void;
+  onImport: (data: DataRow[], settings: ChartSettings) => void;
+  onClose?: () => void;
 }
 
-export default function StackedBarChartImport({ onImport }: StackedBarChartImportProps) {
-  const handleImport = (data: ChartData[], settings: ChartSettings) => {
-    onImport(data, settings);
+export default function StackedBarChartImport({ onImport, onClose }: StackedBarChartImportProps) {
+  const handleImport = (data: DataRow[] | SankeyData) => {
+    // For stacked bar charts, we expect DataRow[]
+    onImport(data as DataRow[], defaultSettings);
   };
 
   return (
     <UniversalImporter
-      onImport={handleImport}
-      chartType="stackedBar"
-      defaultSettings={DEFAULT_CHART_SETTINGS}
+      chartType="stacked-bar"
+      onDataImported={handleImport}
+      onClose={onClose}
     />
   );
 }
