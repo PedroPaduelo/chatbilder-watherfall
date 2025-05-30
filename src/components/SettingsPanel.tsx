@@ -38,27 +38,27 @@ const SettingSection: React.FC<SettingSectionProps> = ({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+        className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
         <div className="flex items-center gap-2">
           {icon}
-          <span className="font-medium text-gray-800">{title}</span>
+          <span className="font-medium text-gray-800 dark:text-gray-200">{title}</span>
           {tooltip && (
             <div className="group relative">
-              <Info size={14} className="text-gray-400 cursor-help" />
-              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+              <Info size={14} className="text-gray-400 dark:text-gray-500 cursor-help" />
+              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-800 dark:bg-gray-700 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
                 {tooltip}
               </div>
             </div>
           )}
         </div>
-        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        {isExpanded ? <ChevronDown size={16} className="text-gray-600 dark:text-gray-400" /> : <ChevronRight size={16} className="text-gray-600 dark:text-gray-400" />}
       </button>
       {isExpanded && (
-        <div className="p-4 space-y-3 bg-white">
+        <div className="p-4 space-y-3 bg-white dark:bg-gray-900">
           {children}
         </div>
       )}
@@ -91,10 +91,10 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
-          <label className="text-sm font-medium text-gray-700">{label}</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
           {tooltip && (
             <div className="group relative">
-              <Info size={12} className="text-gray-400 cursor-help" />
+              <Info size={12} className="text-gray-400 dark:text-gray-500 cursor-help" />
               <div className="tooltip bottom-full left-0 mb-2">
                 {tooltip}
               </div>
@@ -114,7 +114,7 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
         onChange={e => onChange(Number(e.target.value))}
         className="custom-slider focus-ring"
       />
-      <div className="flex justify-between text-xs text-gray-400">
+      <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
         <span>{min}{unit}</span>
         <span>{max}{unit}</span>
       </div>
@@ -133,11 +133,11 @@ const CheckboxToggle: React.FC<CheckboxToggleProps> = ({ label, checked, onChang
   return (
     <label className="flex items-center justify-between cursor-pointer group">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-700">{label}</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
         {tooltip && (
           <div className="group/tooltip relative">
-            <Info size={12} className="text-gray-400 cursor-help" />
-            <div className="absolute left-0 bottom-full mb-1 hidden group-hover/tooltip:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+            <Info size={12} className="text-gray-400 dark:text-gray-500 cursor-help" />
+            <div className="absolute left-0 bottom-full mb-1 hidden group-hover/tooltip:block bg-gray-800 dark:bg-gray-700 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
               {tooltip}
             </div>
           </div>
@@ -151,9 +151,9 @@ const CheckboxToggle: React.FC<CheckboxToggleProps> = ({ label, checked, onChang
           className="sr-only"
         />
         <div className={`w-10 h-6 rounded-full transition-colors ${
-          checked ? 'bg-blue-600' : 'bg-gray-300'
+          checked ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
         }`}>
-          <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${
+          <div className={`w-4 h-4 bg-white dark:bg-gray-200 rounded-full shadow-md transform transition-transform ${
             checked ? 'translate-x-5' : 'translate-x-1'
           } mt-1`} />
         </div>
@@ -171,7 +171,7 @@ interface ColorPickerProps {
 const ColorPicker: React.FC<ColorPickerProps> = ({ label, value, onChange }) => {
   return (
     <div className="flex items-center justify-between group">
-      <span className="text-sm font-medium text-gray-700 capitalize">{label}</span>
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">{label}</span>
       <div className="flex items-center gap-3">
         <div className="color-picker-container">
           <div 
@@ -187,7 +187,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ label, value, onChange }) => 
             className="absolute opacity-0 w-0 h-0"
           />
         </div>
-        <span className="text-xs font-mono text-gray-500 min-w-[4rem]">{value}</span>
+        <span className="text-xs font-mono text-gray-500 dark:text-gray-400 min-w-[4rem]">{value}</span>
       </div>
     </div>
   );
@@ -227,15 +227,15 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Settings className="text-blue-600" size={20} />
-            <h3 className="text-lg font-semibold text-gray-800">Configurações do Gráfico</h3>
+            <Settings className="text-blue-600 dark:text-blue-400" size={20} />
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Configurações do Gráfico</h3>
           </div>
           <button
             onClick={handleResetToDefaults}
-            className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-1"
             title="Restaurar configurações padrão"
           >
             <Settings size={14} />
@@ -343,27 +343,27 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
             defaultExpanded={false}
           >
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Prefixo dos Valores
               </label>
               <input
                 type="text"
                 value={settings.valuePrefix}
                 onChange={e => handleChange('valuePrefix', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 placeholder="Ex: R$, $, €"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Sufixo dos Valores
               </label>
               <input
                 type="text"
                 value={settings.valueSuffix}
                 onChange={e => handleChange('valueSuffix', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 placeholder="Ex: %, M, K"
               />
             </div>
@@ -522,7 +522,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
               />
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Cor da Fonte
                 </label>
                 <div className="flex items-center gap-3">
@@ -539,13 +539,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Peso da Fonte
                 </label>
                 <select
                   value={settings.labelSettings?.categoryFontWeight || 'normal'}
                   onChange={e => handleChange('labelSettings.categoryFontWeight', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="normal">Normal</option>
                   <option value="bold">Negrito</option>
@@ -569,7 +569,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
               />
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Cor da Fonte
                 </label>
                 <div className="flex items-center gap-3">
@@ -586,13 +586,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Peso da Fonte
                 </label>
                 <select
                   value={settings.labelSettings?.valueFontWeight || 'bold'}
                   onChange={e => handleChange('labelSettings.valueFontWeight', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="normal">Normal</option>
                   <option value="bold">Negrito</option>
@@ -616,7 +616,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
               />
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Cor da Fonte
                 </label>
                 <div className="flex items-center gap-3">

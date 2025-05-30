@@ -67,26 +67,26 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 p-4 transition-opacity"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 p-4 transition-opacity"
       onClick={handleBackdropClick}
     >
       <div 
         ref={modalRef}
-        className={`bg-white rounded-lg shadow-xl w-full ${maxWidthClass} max-h-[90vh] flex flex-col animate-scale-in`}
+        className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${maxWidthClass} max-h-[90vh] flex flex-col animate-scale-in`}
         style={{ 
           animation: 'scaleIn 0.2s ease-out forwards',
           opacity: 1
         }}
       >
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label="Fechar"
             type="button"
           >
-            <X size={20} className="text-gray-500" />
+            <X size={20} className="text-gray-500 dark:text-gray-400" />
           </button>
         </div>
         

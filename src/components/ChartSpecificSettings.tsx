@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, RotateCcw, Download, Upload, Info, Lightbulb } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, RotateCcw, Download, Upload, Lightbulb } from 'lucide-react';
 import type { ChartType, ChartSettings } from '../types';
 import { ChartSettingsManager } from '../services/chartSettingsService';
 import SankeyChartConfig from './SankeyChartConfig';
@@ -32,8 +32,26 @@ const ChartSpecificSettings: React.FC<ChartSpecificSettingsProps> = ({
     ChartSettingsManager.saveSettingsForChartType(chartType, newSettings);
   };
 
+  // Handler específico para configurações do Sankey
+  const handleSankeySettingsChange = (sankeySettings: any) => {
+    const newSettings = { ...localSettings, sankeySettings };
+    setLocalSettings(newSettings);
+    onSettingsChange(newSettings);
+    
+    // Save to localStorage for this chart type
+    ChartSettingsManager.saveSettingsForChartType(chartType, newSettings);
+  };
+
   const handleColorChange = (colorType: string, value: string) => {
-    const newColors = { ...localSettings.colors, [colorType]: value };
+    const currentColors = localSettings.colors || {
+      baseline: '#4B5563',
+      increase: '#10B981',
+      decrease: '#EF4444',
+      subtotal: '#3B82F6',
+      total: '#6366F1'
+    };
+    
+    const newColors = { ...currentColors, [colorType]: value };
     const newSettings = { ...localSettings, colors: newColors };
     setLocalSettings(newSettings);
     onSettingsChange(newSettings);
@@ -43,6 +61,10 @@ const ChartSpecificSettings: React.FC<ChartSpecificSettingsProps> = ({
 
   const resetToDefaults = () => {
     const defaultSettings = ChartSettingsManager.resetToDefaults(chartType);
+    // Para Sankey, garantir que as configurações específicas sejam incluídas
+    if (chartType === 'sankey') {
+      defaultSettings.sankeySettings = defaultSankeySettings;
+    }
     setLocalSettings(defaultSettings);
     onSettingsChange(defaultSettings);
   };
@@ -173,174 +195,195 @@ const ChartSpecificSettings: React.FC<ChartSpecificSettingsProps> = ({
 
         {/* Settings Content */}
         <div className="p-6 space-y-6">
-          {/* Layout Settings */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Layout</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Largura da Barra/Linha
-                </label>
-                <input
-                  type="number"
-                  value={localSettings.barWidth || 60}
-                  onChange={(e) => handleSettingChange('barWidth', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  min="10"
-                  max="200"
-                />
+          {/* Configurações Específicas do Sankey */}
+          {chartType === 'sankey' ? (
+            <div className="space-y-6">
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  Configurações Específicas do Sankey
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Configurações avançadas para personalizar a aparência e comportamento do diagrama Sankey
+                </p>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Espaçamento
-                </label>
-                <input
-                  type="number"
-                  value={localSettings.barSpacing || 20}
-                  onChange={(e) => handleSettingChange('barSpacing', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  min="0"
-                  max="100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Rotação de Labels (graus)
-                </label>
-                <input
-                  type="number"
-                  value={localSettings.categoryLabelRotation || 0}
-                  onChange={(e) => handleSettingChange('categoryLabelRotation', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  min="0"
-                  max="90"
-                  step="15"
-                />
-              </div>
+              <SankeyChartConfig
+                settings={localSettings.sankeySettings || defaultSankeySettings}
+                onSettingsChange={handleSankeySettingsChange}
+              />
             </div>
-          </div>
-
-          {/* Display Options */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Exibição</h3>
-            <div className="space-y-3">
-              {chartType === 'waterfall' && (
-                <label className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={localSettings.showConnectors || false}
-                    onChange={(e) => handleSettingChange('showConnectors', e.target.checked)}
-                    className="rounded border-gray-300 dark:border-gray-600"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Mostrar conectores entre barras</span>
-                </label>
-              )}
-              
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={localSettings.showValues !== false}
-                  onChange={(e) => handleSettingChange('showValues', e.target.checked)}
-                  className="rounded border-gray-300 dark:border-gray-600"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Mostrar valores</span>
-              </label>
-              
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={localSettings.showCategories !== false}
-                  onChange={(e) => handleSettingChange('showCategories', e.target.checked)}
-                  className="rounded border-gray-300 dark:border-gray-600"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Mostrar categorias</span>
-              </label>
-
-              {(chartType === 'stacked-bar' || chartType === 'area') && (
-                <label className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={localSettings.showSegmentLabels !== false}
-                    onChange={(e) => handleSettingChange('showSegmentLabels', e.target.checked)}
-                    className="rounded border-gray-300 dark:border-gray-600"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Mostrar labels de segmento</span>
-                </label>
-              )}
-              
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={localSettings.showGridlines !== false}
-                  onChange={(e) => handleSettingChange('showGridlines', e.target.checked)}
-                  className="rounded border-gray-300 dark:border-gray-600"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Mostrar grade</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Value Formatting */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Formatação de Valores</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          ) : (
+            <>
+              {/* Layout Settings */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Prefixo
-                </label>
-                <input
-                  type="text"
-                  value={localSettings.valuePrefix || ''}
-                  onChange={(e) => handleSettingChange('valuePrefix', e.target.value)}
-                  placeholder="ex: R$ "
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Sufixo
-                </label>
-                <input
-                  type="text"
-                  value={localSettings.valueSuffix || ''}
-                  onChange={(e) => handleSettingChange('valueSuffix', e.target.value)}
-                  placeholder="ex: %"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Colors */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Cores</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {Object.entries(localSettings.colors || {}).map(([colorType, color]) => (
-                <div key={colorType}>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 capitalize">
-                    {colorType.replace(/([A-Z])/g, ' $1')}
-                  </label>
-                  <div className="flex items-center gap-2">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Layout</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Largura da Barra/Linha
+                    </label>
                     <input
-                      type="color"
-                      value={color}
-                      onChange={(e) => handleColorChange(colorType, e.target.value)}
-                      className="w-12 h-10 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                      type="number"
+                      value={localSettings.barWidth || 60}
+                      onChange={(e) => handleSettingChange('barWidth', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      min="10"
+                      max="200"
                     />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Espaçamento
+                    </label>
                     <input
-                      type="text"
-                      value={color}
-                      onChange={(e) => handleColorChange(colorType, e.target.value)}
-                      className="flex-1 px-2 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono"
+                      type="number"
+                      value={localSettings.barSpacing || 20}
+                      onChange={(e) => handleSettingChange('barSpacing', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Rotação de Labels (graus)
+                    </label>
+                    <input
+                      type="number"
+                      value={localSettings.categoryLabelRotation || 0}
+                      onChange={(e) => handleSettingChange('categoryLabelRotation', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      min="0"
+                      max="90"
+                      step="15"
                     />
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+
+              {/* Display Options */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Exibição</h3>
+                <div className="space-y-3">
+                  {chartType === 'waterfall' && (
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={localSettings.showConnectors || false}
+                        onChange={(e) => handleSettingChange('showConnectors', e.target.checked)}
+                        className="rounded border-gray-300 dark:border-gray-600"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Mostrar conectores entre barras</span>
+                    </label>
+                  )}
+                  
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={localSettings.showValues !== false}
+                      onChange={(e) => handleSettingChange('showValues', e.target.checked)}
+                      className="rounded border-gray-300 dark:border-gray-600"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Mostrar valores</span>
+                  </label>
+                  
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={localSettings.showCategories !== false}
+                      onChange={(e) => handleSettingChange('showCategories', e.target.checked)}
+                      className="rounded border-gray-300 dark:border-gray-600"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Mostrar categorias</span>
+                  </label>
+
+                  {(chartType === 'stacked-bar' || chartType === 'area') && (
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={localSettings.showSegmentLabels !== false}
+                        onChange={(e) => handleSettingChange('showSegmentLabels', e.target.checked)}
+                        className="rounded border-gray-300 dark:border-gray-600"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Mostrar labels de segmento</span>
+                    </label>
+                  )}
+                  
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={localSettings.showGridlines !== false}
+                      onChange={(e) => handleSettingChange('showGridlines', e.target.checked)}
+                      className="rounded border-gray-300 dark:border-gray-600"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Mostrar grade</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Value Formatting */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Formatação de Valores</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Prefixo
+                    </label>
+                    <input
+                      type="text"
+                      value={localSettings.valuePrefix || ''}
+                      onChange={(e) => handleSettingChange('valuePrefix', e.target.value)}
+                      placeholder="ex: R$ "
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Sufixo
+                    </label>
+                    <input
+                      type="text"
+                      value={localSettings.valueSuffix || ''}
+                      onChange={(e) => handleSettingChange('valueSuffix', e.target.value)}
+                      placeholder="ex: %"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Colors */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Cores</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {Object.entries(localSettings.colors || {}).map(([colorType, color]) => (
+                    <div key={colorType}>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 capitalize">
+                        {colorType.replace(/([A-Z])/g, ' $1')}
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={color}
+                          onChange={(e) => handleColorChange(colorType, e.target.value)}
+                          className="w-12 h-10 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={color}
+                          onChange={(e) => handleColorChange(colorType, e.target.value)}
+                          className="flex-1 px-2 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}

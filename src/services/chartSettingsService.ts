@@ -311,7 +311,15 @@ export class ChartSettingsManager {
       description: string;
     }>;
   }> {
-    const recommendations = {
+    const recommendations: Record<ChartType, Array<{
+      category: string;
+      settings: Array<{
+        key: keyof ChartSettings;
+        label: string;
+        value: any;
+        description: string;
+      }>;
+    }>> = {
       waterfall: [
         {
           category: 'Visualização',
@@ -365,10 +373,21 @@ export class ChartSettingsManager {
       ],
       sankey: [
         {
-          category: 'Fluxo',
+          category: 'Fluxo e Layout',
           settings: [
-            { key: 'showGridlines', label: 'Grade', value: false, description: 'Não necessária para fluxo' },
-            { key: 'showAxes', label: 'Eixos', value: false, description: 'Não aplicável ao Sankey' }
+            { key: 'showGridlines', label: 'Grade', value: false, description: 'Grade não é necessária para diagramas de fluxo' },
+            { key: 'showAxes', label: 'Eixos', value: false, description: 'Eixos não são aplicáveis ao Sankey' },
+            { key: 'barWidth', label: 'Largura dos Nós', value: 20, description: 'Largura otimizada para nós do Sankey' },
+            { key: 'barSpacing', label: 'Espaçamento dos Nós', value: 40, description: 'Espaçamento ideal entre níveis de nós' }
+          ]
+        },
+        {
+          category: 'Configurações Específicas',
+          settings: [
+            { key: 'sankeySettings', label: 'Opacidade dos Links', value: { linkOpacity: 0.7 }, description: 'Transparência ideal para visualizar sobreposições' },
+            { key: 'sankeySettings', label: 'Gradiente nos Links', value: { linkGradient: true }, description: 'Melhora a percepção de fluxo' },
+            { key: 'sankeySettings', label: 'Labels dos Nós', value: { showNodeLabels: true }, description: 'Essencial para identificar elementos' },
+            { key: 'sankeySettings', label: 'Valores dos Nós', value: { showNodeValues: true }, description: 'Mostra magnitude do fluxo' }
           ]
         }
       ]

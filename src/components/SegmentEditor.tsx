@@ -24,12 +24,12 @@ const SegmentEditor: React.FC<SegmentEditorProps> = ({ segments, onSegmentsChang
   };
 
   return (
-    <div className="mt-2 p-3 bg-gray-50 rounded">
+    <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded">
       <div className="flex justify-between items-center mb-2">
-        <span className="text-sm font-medium">Segments</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Segments</span>
         <button
           onClick={handleAddSegment}
-          className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
+          className="text-xs px-2 py-1 bg-blue-500 dark:bg-blue-600 text-white rounded hover:bg-blue-600 dark:hover:bg-blue-700 flex items-center gap-1 transition-colors"
         >
           <Plus size={12} />
           Add Segment
@@ -41,7 +41,7 @@ const SegmentEditor: React.FC<SegmentEditorProps> = ({ segments, onSegmentsChang
             type="text"
             value={segment.categoria}
             onChange={e => handleSegmentChange(index, 'categoria', e.target.value)}
-            className="flex-1 px-2 py-1 text-xs border rounded"
+            className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Category"
           />
           <input
@@ -49,20 +49,20 @@ const SegmentEditor: React.FC<SegmentEditorProps> = ({ segments, onSegmentsChang
             value={segment.valor}
             onChange={e => handleSegmentChange(index, 'valor', parseFloat(e.target.value) || 0)}
             step="0.01"
-            className="w-20 px-2 py-1 text-xs border rounded"
+            className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Value"
           />
           <input
             type="color"
             value={segment.cor}
             onChange={e => handleSegmentChange(index, 'cor', e.target.value)}
-            className="w-8 h-6"
+            className="w-8 h-6 border border-gray-300 dark:border-gray-600 rounded"
           />
           <button
             onClick={() => handleRemoveSegment(index)}
-            className="text-red-500 hover:text-red-700"
+            className="p-1 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition-colors"
           >
-            <Trash2 size={14} />
+            <Trash2 size={12} />
           </button>
         </div>
       ))}
