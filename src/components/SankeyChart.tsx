@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import type { SankeyData, SankeyNode, SankeyLink, ChartSettings } from '../types';
 
 interface SankeyChartProps {
@@ -17,6 +17,7 @@ interface ProcessedNode extends SankeyNode {
   level: number;
   sourceLinks: ProcessedLink[];
   targetLinks: ProcessedLink[];
+  index: number; // Para ordenação estável
 }
 
 interface ProcessedLink extends SankeyLink {
@@ -28,6 +29,12 @@ interface ProcessedLink extends SankeyLink {
   ty1: number;
   width: number;
   path: string;
+}
+
+interface Transform {
+  x: number;
+  y: number;
+  scale: number;
 }
 
 const SankeyChart: React.FC<SankeyChartProps> = ({
@@ -45,21 +52,41 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
   }>({ show: false, x: 0, y: 0, content: '', type: 'node' });
 
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, scale: 1 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  
   const svgRef = useRef<SVGSVGElement>(null);
+  const animationRef = useRef<number>();
 
   const margin = { top: 40, right: 60, bottom: 40, left: 60 };
   const chartWidth = width - margin.left - margin.right;
   const chartHeight = height - margin.top - margin.bottom;
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
 
   const processedData = useMemo(() => {
     if (!data.nodes.length || !data.links.length) {
       return { nodes: [], links: [] };
     }
 
+    setIsAnimating(true);
+    
+    // Usar timeout para mostrar loading state brevemente
+    setTimeout(() => setIsAnimating(false), 300);
+
     // Criar mapa de nós
     const nodeMap = new Map<string, ProcessedNode>();
     
-    data.nodes.forEach(node => {
+    data.nodes.forEach((node, index) => {
       nodeMap.set(node.id, {
         ...node,
         x: 0,
@@ -70,6 +97,7 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
         level: 0,
         sourceLinks: [],
         targetLinks: [],
+        index,
       });
     });
 
@@ -107,21 +135,31 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
       node.value = Math.max(inValue, outValue) || 1;
     });
 
-    // Calcular níveis (colunas) dos nós
+    // Calcular níveis (colunas) dos nós com detecção de ciclos
     const calculateLevels = () => {
       const levels = new Map<string, number>();
+      const visiting = new Set<string>();
       const visited = new Set<string>();
       
       const visit = (nodeId: string): number => {
+        if (visiting.has(nodeId)) {
+          // Ciclo detectado - usar nível baseado na posição no array
+          console.warn(`Cycle detected involving node: ${nodeId}`);
+          const node = nodeMap.get(nodeId)!;
+          return node.index % 3; // Distribuir em 3 níveis como fallback
+        }
+        
         if (visited.has(nodeId)) {
           return levels.get(nodeId) || 0;
         }
         
-        visited.add(nodeId);
+        visiting.add(nodeId);
         const node = nodeMap.get(nodeId)!;
         
         if (node.targetLinks.length === 0) {
           levels.set(nodeId, 0);
+          visiting.delete(nodeId);
+          visited.add(nodeId);
           return 0;
         }
         
@@ -133,6 +171,8 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
         
         const level = maxLevel + 1;
         levels.set(nodeId, level);
+        visiting.delete(nodeId);
+        visited.add(nodeId);
         return level;
       };
 
@@ -155,39 +195,49 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
 
     // Calcular escala de altura
     const totalValue = Math.max(...nodes.map(n => n.value));
-    const heightScale = (chartHeight * 0.8) / totalValue;
+    const heightScale = (chartHeight * 0.7) / totalValue; // Reduzir para dar mais espaço
 
     // Calcular alturas dos nós
     nodes.forEach(node => {
-      node.height = Math.max(8, node.value * heightScale);
+      node.height = Math.max(12, node.value * heightScale); // Altura mínima maior
     });
 
     // Posicionar nós horizontalmente
-    const levelWidth = chartWidth / (maxLevel + 1);
+    const levelWidth = Math.max(60, chartWidth / (maxLevel + 1)); // Largura mínima por nível
     nodesByLevel.forEach((levelNodes, level) => {
-      const x = level * levelWidth + levelWidth / 2 - 7.5; // Centro do nó
+      const x = level * levelWidth + levelWidth / 2 - 7.5;
       levelNodes.forEach(node => {
         node.x = x;
       });
     });
 
-    // Posicionar nós verticalmente
+    // Algoritmo melhorado de posicionamento vertical
     const positionVertically = () => {
-      // Posicionamento inicial
+      // Primeiro passo: distribuição inicial uniforme
       nodesByLevel.forEach(levelNodes => {
-        const totalHeight = levelNodes.reduce((sum, node) => sum + node.height, 0);
-        const spacing = Math.max(10, (chartHeight - totalHeight) / (levelNodes.length + 1));
+        // Ordenar por valor para estabilidade
+        levelNodes.sort((a, b) => b.value - a.value || a.index - b.index);
         
-        let currentY = spacing;
+        const totalNodeHeight = levelNodes.reduce((sum, node) => sum + node.height, 0);
+        const availableSpace = chartHeight - totalNodeHeight;
+        const minSpacing = 8;
+        const idealSpacing = Math.max(minSpacing, availableSpace / (levelNodes.length + 1));
+        
+        let currentY = idealSpacing;
         levelNodes.forEach(node => {
           node.y = currentY;
-          currentY += node.height + spacing;
+          currentY += node.height + idealSpacing;
         });
       });
 
-      // Otimização iterativa
-      for (let iteration = 0; iteration < 8; iteration++) {
-        // Ajustar baseado nos targets (da esquerda para direita)
+      // Otimização iterativa com convergência melhorada
+      const maxIterations = 12;
+      const alpha = 0.3; // Fator de amortecimento para estabilidade
+      
+      for (let iteration = 0; iteration < maxIterations; iteration++) {
+        let totalMovement = 0;
+        
+        // Ajustar baseado nos targets (esquerda para direita)
         for (let level = 0; level < nodesByLevel.length - 1; level++) {
           nodesByLevel[level].forEach(node => {
             if (node.sourceLinks.length > 0) {
@@ -198,13 +248,15 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
               
               if (totalWeight > 0) {
                 const idealY = weightedY / totalWeight - node.height / 2;
-                node.y = (node.y + idealY) * 0.6 + idealY * 0.4;
+                const oldY = node.y;
+                node.y = node.y + (idealY - node.y) * alpha;
+                totalMovement += Math.abs(node.y - oldY);
               }
             }
           });
         }
 
-        // Ajustar baseado nos sources (da direita para esquerda)
+        // Ajustar baseado nos sources (direita para esquerda)
         for (let level = nodesByLevel.length - 1; level > 0; level--) {
           nodesByLevel[level].forEach(node => {
             if (node.targetLinks.length > 0) {
@@ -215,37 +267,64 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
               
               if (totalWeight > 0) {
                 const idealY = weightedY / totalWeight - node.height / 2;
-                node.y = (node.y + idealY) * 0.6 + idealY * 0.4;
+                const oldY = node.y;
+                node.y = node.y + (idealY - node.y) * alpha;
+                totalMovement += Math.abs(node.y - oldY);
               }
             }
           });
         }
 
-        // Resolver sobreposições
+        // Resolver sobreposições com algoritmo melhorado
         nodesByLevel.forEach(levelNodes => {
           levelNodes.sort((a, b) => a.y - b.y);
           
+          const minGap = 8;
+          let totalOverlap = 0;
+          
+          // Primeira passada: detectar sobreposições
           for (let i = 1; i < levelNodes.length; i++) {
             const current = levelNodes[i];
             const previous = levelNodes[i - 1];
-            const minGap = 5;
+            const requiredY = previous.y + previous.height + minGap;
             
-            if (current.y < previous.y + previous.height + minGap) {
-              current.y = previous.y + previous.height + minGap;
+            if (current.y < requiredY) {
+              totalOverlap += requiredY - current.y;
+            }
+          }
+          
+          // Segunda passada: distribuir correções proporcionalmente
+          if (totalOverlap > 0) {
+            const compressionFactor = Math.min(1, (chartHeight - levelNodes[levelNodes.length - 1].height) / 
+              (levelNodes[levelNodes.length - 1].y + totalOverlap));
+            
+            for (let i = 1; i < levelNodes.length; i++) {
+              const current = levelNodes[i];
+              const previous = levelNodes[i - 1];
+              const requiredY = previous.y + previous.height + minGap;
+              
+              if (current.y < requiredY) {
+                current.y = requiredY * compressionFactor;
+              }
             }
           }
         });
-      }
 
-      // Garantir que todos os nós estão dentro dos limites
-      nodes.forEach(node => {
-        node.y = Math.max(0, Math.min(chartHeight - node.height, node.y));
-      });
+        // Garantir limites com margem de segurança
+        nodes.forEach(node => {
+          node.y = Math.max(5, Math.min(chartHeight - node.height - 5, node.y));
+        });
+        
+        // Convergência: parar se pouco movimento
+        if (totalMovement < 1) {
+          break;
+        }
+      }
     };
 
     positionVertically();
 
-    // Calcular posições dos links
+    // Calcular posições dos links com melhor alinhamento
     const calculateLinkPositions = () => {
       // Ordenar links para minimizar cruzamentos
       nodes.forEach(node => {
@@ -253,20 +332,32 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
         node.targetLinks.sort((a, b) => (a.sourceNode.y + a.sourceNode.height / 2) - (b.sourceNode.y + b.sourceNode.height / 2));
       });
 
-      // Calcular posições Y dos links nos nós source
+      // Calcular posições Y dos links nos nós source com melhor distribuição
       nodes.forEach(node => {
-        let sy = node.y;
+        if (node.sourceLinks.length === 0) return;
+        
+        const totalLinkWidth = node.sourceLinks.reduce((sum, link) => sum + link.value * heightScale, 0);
+        const availableHeight = node.height;
+        const padding = Math.max(1, (availableHeight - totalLinkWidth) / 2);
+        
+        let sy = node.y + padding;
         node.sourceLinks.forEach(link => {
           link.sy0 = sy;
-          link.width = link.value * heightScale;
+          link.width = Math.max(1, link.value * heightScale);
           link.sy1 = sy + link.width;
           sy = link.sy1;
         });
       });
 
-      // Calcular posições Y dos links nos nós target
+      // Calcular posições Y dos links nos nós target com melhor distribuição
       nodes.forEach(node => {
-        let ty = node.y;
+        if (node.targetLinks.length === 0) return;
+        
+        const totalLinkWidth = node.targetLinks.reduce((sum, link) => sum + link.value * heightScale, 0);
+        const availableHeight = node.height;
+        const padding = Math.max(1, (availableHeight - totalLinkWidth) / 2);
+        
+        let ty = node.y + padding;
         node.targetLinks.forEach(link => {
           link.ty0 = ty;
           link.ty1 = ty + link.width;
@@ -277,23 +368,26 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
 
     calculateLinkPositions();
 
-    // Gerar caminhos dos links
+    // Gerar caminhos dos links com curvas melhoradas
     links.forEach(link => {
       const x0 = link.sourceNode.x + link.sourceNode.width;
       const x1 = link.targetNode.x;
-      const y0 = link.sy0;
-      const y1 = link.sy1;
-      const y2 = link.ty0;
-      const y3 = link.ty1;
+      const sy0 = link.sy0;
+      const sy1 = link.sy1;
+      const ty0 = link.ty0;
+      const ty1 = link.ty1;
       
-      const curvature = 0.5;
-      const xi = (x1 - x0) * curvature;
+      // Calcular curvatura adaptativa baseada na distância
+      const distance = x1 - x0;
+      const curvature = Math.min(0.6, Math.max(0.3, distance / 200));
+      const xi = distance * curvature;
       
+      // Usar curvas cúbicas de Bézier mais suaves
       link.path = `
-        M${x0},${y0}
-        C${x0 + xi},${y0} ${x1 - xi},${y2} ${x1},${y2}
-        L${x1},${y3}
-        C${x1 - xi},${y3} ${x0 + xi},${y1} ${x0},${y1}
+        M${x0},${sy0}
+        C${x0 + xi},${sy0} ${x1 - xi},${ty0} ${x1},${ty0}
+        L${x1},${ty1}
+        C${x1 - xi},${ty1} ${x0 + xi},${sy1} ${x0},${sy1}
         Z
       `.replace(/\s+/g, ' ').trim();
     });
@@ -309,38 +403,158 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
 
   const getNodeColor = (index: number) => colors[index % colors.length];
 
-  const handleNodeHover = (event: React.MouseEvent, node: ProcessedNode, index: number) => {
+  // Função para posicionamento inteligente do tooltip
+  const getTooltipPosition = useCallback((mouseX: number, mouseY: number, tooltipWidth = 250, tooltipHeight = 80) => {
+    if (!svgRef.current) return { x: mouseX + 10, y: mouseY - 10 };
+
+    const rect = svgRef.current.getBoundingClientRect();
+    const containerWidth = rect.width;
+    const containerHeight = rect.height;
+    
+    let x = mouseX + 15;
+    let y = mouseY - 15;
+    
+    // Ajustar horizontalmente se sair da tela
+    if (x + tooltipWidth > containerWidth) {
+      x = mouseX - tooltipWidth - 15;
+    }
+    
+    // Ajustar verticalmente se sair da tela
+    if (y - tooltipHeight < 0) {
+      y = mouseY + 15;
+    } else if (y > containerHeight - tooltipHeight) {
+      y = containerHeight - tooltipHeight - 10;
+    }
+    
+    return { x: Math.max(10, x), y: Math.max(10, y) };
+  }, []);
+
+  const handleNodeHover = useCallback((event: React.MouseEvent, node: ProcessedNode) => {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return;
+
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    const position = getTooltipPosition(mouseX, mouseY);
 
     setHoveredElement(node.id);
+    
+    // Calcular estatísticas do nó
+    const totalInFlow = node.targetLinks.reduce((sum, link) => sum + link.value, 0);
+    const totalOutFlow = node.sourceLinks.reduce((sum, link) => sum + link.value, 0);
+    const efficiency = totalOutFlow > 0 ? ((totalOutFlow / totalInFlow) * 100).toFixed(1) : '100.0';
+    
+    const content = [
+      `📍 ${node.name}`,
+      `💰 Value: ${node.value.toLocaleString()}`,
+      `📊 Level: ${node.level + 1}`,
+      totalInFlow > 0 && `⬇️ In-flow: ${totalInFlow.toLocaleString()}`,
+      totalOutFlow > 0 && `⬆️ Out-flow: ${totalOutFlow.toLocaleString()}`,
+      totalInFlow > 0 && totalOutFlow > 0 && `⚡ Efficiency: ${efficiency}%`,
+      `🔗 Connections: ${node.sourceLinks.length + node.targetLinks.length}`,
+    ].filter(Boolean).join('\n');
+
     setTooltip({
       show: true,
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-      content: `${node.name}\nValue: ${node.value.toLocaleString()}\nLevel: ${node.level}\nConnections: ${node.sourceLinks.length + node.targetLinks.length}`,
+      x: position.x,
+      y: position.y,
+      content,
       type: 'node',
     });
-  };
+  }, [getTooltipPosition]);
 
-  const handleLinkHover = (event: React.MouseEvent, link: ProcessedLink) => {
+  const handleLinkHover = useCallback((event: React.MouseEvent, link: ProcessedLink) => {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return;
 
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    const position = getTooltipPosition(mouseX, mouseY);
+
     setHoveredElement(`${link.source}-${link.target}`);
+    
+    // Calcular estatísticas do link
+    const sourcePercentage = ((link.value / link.sourceNode.value) * 100).toFixed(1);
+    const targetPercentage = link.targetNode.value > 0 ? 
+      ((link.value / link.targetNode.value) * 100).toFixed(1) : '100.0';
+    
+    const content = [
+      `🔄 ${link.sourceNode.name} → ${link.targetNode.name}`,
+      `💸 Flow: ${link.value.toLocaleString()}`,
+      `📈 From source: ${sourcePercentage}%`,
+      `📉 To target: ${targetPercentage}%`,
+      `🎯 Flow efficiency: ${(Math.min(+sourcePercentage, +targetPercentage)).toFixed(1)}%`,
+    ].join('\n');
+
     setTooltip({
       show: true,
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-      content: `${link.sourceNode.name} → ${link.targetNode.name}\nFlow: ${link.value.toLocaleString()}\nPercentage: ${((link.value / link.sourceNode.value) * 100).toFixed(1)}%`,
+      x: position.x,
+      y: position.y,
+      content,
       type: 'link',
     });
-  };
+  }, [getTooltipPosition]);
 
   const handleMouseLeave = () => {
     setHoveredElement(null);
     setTooltip(prev => ({ ...prev, show: false }));
   };
+
+  // Funções para zoom e pan
+  const handleWheel = useCallback((event: WheelEvent) => {
+    event.preventDefault();
+    
+    const scaleAmount = -event.deltaY * 0.002;
+    setTransform(prev => {
+      const newScale = Math.min(Math.max(prev.scale + scaleAmount, 0.5), 3);
+      return {
+        x: prev.x,
+        y: prev.y,
+        scale: newScale,
+      };
+    });
+  }, []);
+
+  const handleMouseDown = useCallback((event: React.MouseEvent) => {
+    if (event.button !== 0) return;
+
+    setIsDragging(true);
+    setDragStart({ x: event.clientX, y: event.clientY });
+  }, []);
+
+  const handleMouseMove = useCallback((event: MouseEvent) => {
+    if (!isDragging) return;
+
+    const dx = event.clientX - dragStart.x;
+    const dy = event.clientY - dragStart.y;
+
+    setTransform(prev => ({
+      x: prev.x + dx / prev.scale,
+      y: prev.y + dy / prev.scale,
+      scale: prev.scale,
+    }));
+
+    setDragStart({ x: event.clientX, y: event.clientY });
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    const svgElement = svgRef.current;
+    if (!svgElement) return;
+
+    svgElement.addEventListener('wheel', handleWheel);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      svgElement.removeEventListener('wheel', handleWheel);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleWheel, handleMouseMove, handleMouseUp]);
 
   if (!processedData.nodes.length) {
     return (
@@ -403,88 +617,94 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
         )}
 
         <g transform={`translate(${margin.left}, ${margin.top})`}>
-          {/* Renderizar links */}
-          {processedData.links.map((link, index) => {
-            const isHovered = hoveredElement === `${link.source}-${link.target}`;
-            const isConnected = hoveredElement === link.source || hoveredElement === link.target;
-            
-            return (
-              <path
-                key={`link-${index}`}
-                d={link.path}
-                fill={`url(#gradient-${index})`}
-                fillOpacity={isHovered ? 0.8 : isConnected ? 0.6 : 0.5}
-                stroke="none"
-                className="cursor-pointer transition-all duration-200"
-                style={{
-                  filter: isHovered ? 'url(#shadow)' : 'none',
-                }}
-                onMouseEnter={(e) => handleLinkHover(e, link)}
-                onMouseLeave={handleMouseLeave}
-              />
-            );
-          })}
-
-          {/* Renderizar nós */}
-          {processedData.nodes.map((node, index) => {
-            const isHovered = hoveredElement === node.id;
-            const isConnected = processedData.links.some(link => 
-              (link.source === node.id || link.target === node.id) && 
-              hoveredElement === `${link.source}-${link.target}`
-            );
-            
-            return (
-              <g key={`node-${node.id}`}>
-                <rect
-                  x={node.x}
-                  y={node.y}
-                  width={node.width}
-                  height={node.height}
-                  fill={getNodeColor(index)}
-                  fillOpacity={isHovered ? 1 : isConnected ? 0.8 : 0.9}
-                  rx="2"
+          <g 
+            transform={`translate(${transform.x}, ${transform.y}) scale(${transform.scale})`}
+            onMouseDown={handleMouseDown}
+            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          >
+            {/* Renderizar links */}
+            {processedData.links.map((link, index) => {
+              const isHovered = hoveredElement === `${link.source}-${link.target}`;
+              const isConnected = hoveredElement === link.source || hoveredElement === link.target;
+              
+              return (
+                <path
+                  key={`link-${index}`}
+                  d={link.path}
+                  fill={`url(#gradient-${index})`}
+                  fillOpacity={isHovered ? 0.8 : isConnected ? 0.6 : 0.5}
+                  stroke="none"
                   className="cursor-pointer transition-all duration-200"
                   style={{
                     filter: isHovered ? 'url(#shadow)' : 'none',
-                    transform: isHovered ? 'scale(1.02)' : 'scale(1)',
-                    transformOrigin: 'center',
                   }}
-                  onMouseEnter={(e) => handleNodeHover(e, node, index)}
+                  onMouseEnter={(e) => handleLinkHover(e, link)}
                   onMouseLeave={handleMouseLeave}
                 />
-                
-                {/* Label do nó */}
-                <text
-                  x={node.level === 0 ? node.x - 8 : node.x + node.width + 8}
-                  y={node.y + node.height / 2}
-                  dy="0.35em"
-                  textAnchor={node.level === 0 ? "end" : "start"}
-                  fontSize="11"
-                  fontWeight="500"
-                  fill="#374151"
-                  className="pointer-events-none select-none"
-                >
-                  {node.name}
-                </text>
-                
-                {/* Valor do nó (se houver espaço) */}
-                {node.height > 20 && (
+              );
+            })}
+
+            {/* Renderizar nós */}
+            {processedData.nodes.map((node, index) => {
+              const isHovered = hoveredElement === node.id;
+              const isConnected = processedData.links.some(link => 
+                (link.source === node.id || link.target === node.id) && 
+                hoveredElement === `${link.source}-${link.target}`
+              );
+              
+              return (
+                <g key={`node-${node.id}`}>
+                  <rect
+                    x={node.x}
+                    y={node.y}
+                    width={node.width}
+                    height={node.height}
+                    fill={getNodeColor(index)}
+                    fillOpacity={isHovered ? 1 : isConnected ? 0.8 : 0.9}
+                    rx="2"
+                    className="cursor-pointer transition-all duration-200"
+                    style={{
+                      filter: isHovered ? 'url(#shadow)' : 'none',
+                      transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+                      transformOrigin: 'center',
+                    }}
+                    onMouseEnter={(e) => handleNodeHover(e, node)}
+                    onMouseLeave={handleMouseLeave}
+                  />
+                  
+                  {/* Label do nó */}
                   <text
-                    x={node.x + node.width / 2}
+                    x={node.level === 0 ? node.x - 8 : node.x + node.width + 8}
                     y={node.y + node.height / 2}
                     dy="0.35em"
-                    textAnchor="middle"
-                    fontSize="9"
-                    fontWeight="600"
-                    fill="white"
+                    textAnchor={node.level === 0 ? "end" : "start"}
+                    fontSize="11"
+                    fontWeight="500"
+                    fill="#374151"
                     className="pointer-events-none select-none"
                   >
-                    {node.value}
+                    {node.name}
                   </text>
-                )}
-              </g>
-            );
-          })}
+                  
+                  {/* Valor do nó (se houver espaço) */}
+                  {node.height > 20 && (
+                    <text
+                      x={node.x + node.width / 2}
+                      y={node.y + node.height / 2}
+                      dy="0.35em"
+                      textAnchor="middle"
+                      fontSize="9"
+                      fontWeight="600"
+                      fill="white"
+                      className="pointer-events-none select-none"
+                    >
+                      {node.value}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </g>
         </g>
       </svg>
 
@@ -509,12 +729,59 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
         </div>
       )}
 
-      {/* Legenda */}
-      <div className="absolute top-3 right-3 bg-white/95 rounded-lg p-2 text-xs text-gray-600 shadow-sm border">
-        <div className="font-semibold mb-1">Sankey Flow</div>
-        <div>• Width = Flow value</div>
-        <div>• Hover for details</div>
+      {/* Controles de Zoom e Reset */}
+      <div className="absolute top-3 left-3 bg-white/95 rounded-lg p-2 shadow-sm border space-y-1">
+        <button
+          onClick={() => setTransform(prev => ({ ...prev, scale: Math.min(prev.scale * 1.2, 3) }))}
+          className="w-8 h-8 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold"
+          title="Zoom In"
+        >
+          +
+        </button>
+        <button
+          onClick={() => setTransform(prev => ({ ...prev, scale: Math.max(prev.scale / 1.2, 0.5) }))}
+          className="w-8 h-8 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold"
+          title="Zoom Out"
+        >
+          −
+        </button>
+        <button
+          onClick={() => setTransform({ x: 0, y: 0, scale: 1 })}
+          className="w-8 h-8 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs"
+          title="Reset View"
+        >
+          ⌂
+        </button>
+        <div className="text-xs text-gray-500 text-center pt-1">
+          {Math.round(transform.scale * 100)}%
+        </div>
       </div>
+
+      {/* Legenda melhorada */}
+      <div className="absolute top-3 right-3 bg-white/95 rounded-lg p-3 text-xs text-gray-600 shadow-sm border">
+        <div className="font-semibold mb-2 text-sm">Sankey Flow</div>
+        <div className="space-y-1">
+          <div>• 🖱️ Drag to pan</div>
+          <div>• 🔄 Scroll to zoom</div>
+          <div>• 📏 Width = Flow value</div>
+          <div>• 🎯 Hover for details</div>
+        </div>
+        <div className="mt-2 pt-2 border-t border-gray-200">
+          <div className="text-xs text-gray-500">
+            Nodes: {processedData.nodes.length} | Links: {processedData.links.length}
+          </div>
+        </div>
+      </div>
+
+      {/* Loading state */}
+      {isAnimating && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-20">
+          <svg className="animate-spin h-8 w-8 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v16a8 8 0 01-8-8zm16 0a8 8 0 01-8 8V4a8 8 0 018 8z"></path>
+          </svg>
+        </div>
+      )}
     </div>
   );
 };
