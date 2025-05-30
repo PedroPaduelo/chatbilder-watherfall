@@ -199,7 +199,7 @@ const RechartsWaterfall: React.FC<RechartsWaterfallProps> = ({
   const handleMouseLeave = () => {
     setHoveredIndex(null);
   };
-
+console.log({ chartData, settings, data });
   return (
     <div className="w-full h-full">
       <ResponsiveContainer 
@@ -251,7 +251,7 @@ const RechartsWaterfall: React.FC<RechartsWaterfallProps> = ({
             }}
             axisLine={settings.showAxes}
             tickLine={settings.showAxes}
-            domain={['dataMin - 0.1', 'dataMax + 0.1']}
+            domain={['dataMin', 'dataMax + 0.1']}
           />
           
           <Tooltip
@@ -260,7 +260,7 @@ const RechartsWaterfall: React.FC<RechartsWaterfallProps> = ({
           />
 
           {/* Add zero reference line */}
-          <ReferenceLine y={0} stroke="#374151" strokeWidth={1} />
+          {/* <ReferenceLine y={0} stroke="#374151" strokeWidth={1} /> */}
 
           {/* Invisible base bars for positioning */}
           <Bar
@@ -271,6 +271,7 @@ const RechartsWaterfall: React.FC<RechartsWaterfallProps> = ({
 
           {/* Actual waterfall bars */}
           <Bar
+            
             dataKey="value"
             stackId="waterfall"
             maxBarSize={settings.barWidth}
