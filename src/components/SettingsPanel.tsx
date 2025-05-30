@@ -277,6 +277,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
             title="Dimensões e Layout"
             icon={<Sliders className="text-purple-600" size={16} />}
             tooltip="Configure o tamanho e espaçamento das barras"
+            defaultExpanded={false}
           >
             <RangeSlider
               label="Largura das Barras"
@@ -304,6 +305,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
             title="Elementos Visuais"
             icon={<Eye className="text-green-600" size={16} />}
             tooltip="Configure quais elementos mostrar no gráfico"
+            defaultExpanded={false}
           >
             <CheckboxToggle
               label="Conectores"
@@ -366,6 +368,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
             title="Formatação de Valores"
             icon={<Type className="text-orange-600" size={16} />}
             tooltip="Configure como os valores são exibidos"
+            defaultExpanded={false}
           >
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -399,6 +402,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
             title="Paleta de Cores"
             icon={<Palette className="text-pink-600" size={16} />}
             tooltip="Cores padrão para cada tipo de barra"
+            defaultExpanded={false}
           >
             {/* Color Presets */}
             <div className="mb-4">
@@ -529,6 +533,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
             title="Aparência dos Rótulos"
             icon={<Edit3 className="text-indigo-600" size={16} />}
             tooltip="Personalize o tamanho, cor e peso das fontes dos rótulos"
+            defaultExpanded={false}
           >
             {/* Category Labels */}
             <div className="space-y-3 pb-3 border-b border-gray-100">
@@ -662,6 +667,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
             title="Dimensões do Gráfico"
             icon={<Maximize2 className="text-cyan-600" size={16} />}
             tooltip="Configure o tamanho do gráfico e proporções"
+            defaultExpanded={false}
           >
             <CheckboxToggle
               label="Redimensionamento Automático"

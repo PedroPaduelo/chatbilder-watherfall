@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useChartMetrics } from '../hooks/useChartMetrics';
 import { formatValue } from '../utils/helpers';
+import WaterfallChart from './WaterfallChart';
 import type { DataRow, ChartSettings } from '../types';
 
 interface MetricsDashboardProps {
@@ -22,7 +23,7 @@ interface MetricsDashboardProps {
 interface MetricCardProps {
   title: string;
   value: string | number;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<any>;
   color: string;
   trend?: {
     value: number;
@@ -205,6 +206,21 @@ const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Waterfall Chart */}
+      <div className="mt-6">
+        <div className="flex items-center gap-2 mb-4">
+          <BarChart3 size={20} className="text-orange-600 dark:text-orange-400" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Visualização do Gráfico
+          </h3>
+        </div>
+        
+        <WaterfallChart 
+          data={data} 
+          settings={settings}
+        />
       </div>
     </div>
   );
