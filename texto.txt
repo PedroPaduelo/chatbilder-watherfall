@@ -1,3 +1,5 @@
 pense em como fazer isso quebre em tarefas e lembre-se de sempre fazer os codigos componentizados e de atulizar o redme sempre que preciso
 
-a idea do projeto e ser um charte bildar que salva os graficos e lista eles em um dash o user podera criar graficos importando basse em csv salvar esse graficos e criar dashs com esse graficos listando e redimencionando eles quero salvar tudo isso no localstoreg ou se tiver outra forma no browse tipo banco index melhor pode usar,  pense em como fazer isso quebre em tarefas e lembre-se de sempre fazer os codigos componentizados e de atulizar o redme sempre que preciso
+a idea do projeto e ser um charte bildar que salva os graficos e lista eles em um dash o user podera criar graficos importando basse em csv salvar esse graficos e criar dashs com esse graficos listando e redimencionando eles quero salvar tudo isso no localstoreg ou se tiver outra forma no browse tipo banco index melhor pode usar,
+  
+pense em como fazer isso quebre em tarefas e lembre-se de sempre fazer os codigos componentizados e de atulizar o redme sempre que preciso

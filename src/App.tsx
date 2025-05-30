@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Navigation } from './components/Navigation';
 import UniversalChartRenderer from './components/UniversalChartRenderer';
 import ChartTypeSelector from './components/ChartTypeSelector';
 import DataEditor from './components/DataEditor';
@@ -14,8 +15,10 @@ import { NotificationContainer } from './components/Notification';
 import { useFileOperations } from './hooks/useFileOperations';
 import { useNotifications } from './hooks/useNotifications';
 import { useSavedViews } from './hooks/useSavedViews';
+import { useSavedCharts } from './hooks/useSavedCharts';
 import { useTheme } from './hooks/useTheme';
 import { useChartDimensions } from './hooks/useChartDimensions';
+import { SavedChart } from './services/databaseService';
 import type { DataRow, ChartSettings, ChartType, ChartData, SankeyData } from './types';
 import { defaultSettings, initialData } from './utils/constants';
 import { getSampleDataForChartType, getSankeySampleData } from './utils/sampleData';
@@ -34,7 +37,7 @@ const App = () => {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showViewsManager, setShowViewsManager] = useState(false);
   const [showChartSettings, setShowChartSettings] = useState(false);
-  const [activeView, setActiveView] = useState<'chart' | 'dashboard'>('chart');
+  const [activeView, setActiveView] = useState<'chart' | 'dashboard' | 'navigation'>('navigation');
   
   // Refs
   const chartRef = useRef<HTMLDivElement>(null);
@@ -43,6 +46,7 @@ const App = () => {
   // Hooks
   const { notifications, notifySuccess, notifyError, removeNotification } = useNotifications();
   const { saveView } = useSavedViews();
+  const { saveChart } = useSavedCharts();
   const { resolvedTheme } = useTheme();
   const dimensions = useChartDimensions(filteredData, settings);
   
@@ -69,13 +73,74 @@ const App = () => {
     area: filteredData,
   };
 
+  // Get current chart data for saving
+  const getCurrentChartData = () => ({
+    name: `${selectedChartType} Chart`,
+    description: `Gráfico criado em ${new Date().toLocaleDateString('pt-BR')}`,
+    chartType: selectedChartType,
+    data: selectedChartType === 'sankey' ? sankeyData : filteredData,
+    settings,
+    tags: [selectedChartType, 'custom'],
+  });
+
+  // Handle chart selection from saved charts
+  const handleSelectChart = (chart: SavedChart) => {
+    try {
+      setSelectedChartType(chart.chartType as ChartType);
+      
+      if (chart.chartType === 'sankey') {
+        setSankeyData(chart.data as SankeyData);
+        setData([]);
+        setFilteredData([]);
+      } else {
+        setData(chart.data as DataRow[]);
+        setFilteredData(chart.data as DataRow[]);
+      }
+      
+      setSettings(chart.settings);
+      setAnnotations([]);
+      setActiveView('chart');
+      
+      notifySuccess('Gráfico carregado', `"${chart.name}" foi carregado com sucesso`);
+    } catch (error) {
+      notifyError(
+        'Erro ao carregar gráfico',
+        error instanceof Error ? error.message : 'Erro desconhecido'
+      );
+    }
+  };
+
+  // Handle creating new chart
+  const handleCreateChart = () => {
+    setActiveView('chart');
+    notifySuccess('Modo de criação ativado', 'Configure seus dados e tipo de gráfico');
+  };
+
+  // Save current chart
+  const handleSaveCurrentChart = async () => {
+    try {
+      const chartData = getCurrentChartData();
+      await saveChart(chartData);
+      notifySuccess('Gráfico salvo', `"${chartData.name}" foi salvo com sucesso`);
+    } catch (error) {
+      notifyError(
+        'Erro ao salvar gráfico',
+        error instanceof Error ? error.message : 'Erro desconhecido'
+      );
+    }
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl/Cmd + S - Save view
+      // Ctrl/Cmd + S - Save chart/view
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        setShowSaveModal(true);
+        if (activeView === 'chart') {
+          handleSaveCurrentChart();
+        } else {
+          setShowSaveModal(true);
+        }
       }
       
       // Ctrl/Cmd + O - Open views manager
@@ -93,20 +158,25 @@ const App = () => {
       // Ctrl/Cmd + E - Export PNG
       if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
         e.preventDefault();
-        handleExportPNG();
-      }
-      
-      // Tab - Switch between chart and dashboard
-      if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
-        const activeElement = document.activeElement;
-        if (activeElement?.tagName !== 'INPUT' && activeElement?.tagName !== 'TEXTAREA') {
-          e.preventDefault();
-          setActiveView(prev => prev === 'chart' ? 'dashboard' : 'chart');
+        if (activeView === 'chart') {
+          handleExportPNG();
         }
       }
+      
+      // Ctrl/Cmd + N - Open navigation
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        setActiveView('navigation');
+      }
+      
+      // Escape - Back to navigation
+      if (e.key === 'Escape' && activeView !== 'navigation') {
+        e.preventDefault();
+        setActiveView('navigation');
+      }
 
-      // Number keys 1-5 for quick chart type switching
-      if (e.key >= '1' && e.key <= '5' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // Number keys 1-5 for quick chart type switching (only in chart mode)
+      if (e.key >= '1' && e.key <= '5' && !e.ctrlKey && !e.metaKey && !e.altKey && activeView === 'chart') {
         const activeElement = document.activeElement;
         if (activeElement?.tagName !== 'INPUT' && activeElement?.tagName !== 'TEXTAREA') {
           e.preventDefault();
@@ -122,7 +192,7 @@ const App = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [activeView]);
 
   // File upload handler with error handling
   const onFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -288,6 +358,33 @@ const App = () => {
     }
   };
 
+  // Render based on active view
+  if (activeView === 'navigation') {
+    return (
+      <div className={`transition-colors duration-200 ${
+        resolvedTheme === 'dark' 
+          ? 'bg-gray-900' 
+          : 'bg-gray-100'
+      }`}>
+        <Navigation
+          onSelectChart={handleSelectChart}
+          onCreateChart={handleCreateChart}
+          currentChartData={getCurrentChartData()}
+          currentView="charts"
+          onViewChange={() => {}}
+          onNewChart={handleCreateChart}
+          onNewDashboard={() => setActiveView('dashboard')}
+        />
+        
+        {/* Notifications */}
+        <NotificationContainer
+          notifications={notifications}
+          onClose={removeNotification}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen transition-colors duration-200 ${
       resolvedTheme === 'dark' 
@@ -309,6 +406,14 @@ const App = () => {
             
             <div className="flex items-center gap-4">
               <ThemeSelector />
+              
+              {/* Navigation Button */}
+              <button
+                onClick={() => setActiveView('navigation')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                ← Voltar
+              </button>
               
               {/* View Toggle */}
               <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
@@ -362,7 +467,7 @@ const App = () => {
             />
           </div>
 
-          {/* Main Content Area - Chart/Dashboard (expande para ocupar o espaço do painel removido) */}
+          {/* Main Content Area - Chart/Dashboard */}
           <div className="lg:col-span-10 xl:col-span-10 space-y-6">
             {activeView === 'dashboard' ? (
               <MetricsDashboard 
@@ -371,7 +476,7 @@ const App = () => {
                 className="animate-fade-in"
               />
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-fade-in">
+              <div className="sticky top-5 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-fade-in">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Chart Preview - {selectedChartType.charAt(0).toUpperCase() + selectedChartType.slice(1)}
@@ -397,6 +502,7 @@ const App = () => {
                     onSaveView={() => setShowSaveModal(true)}
                     onManageViews={() => setShowViewsManager(true)}
                     onShowChartSettings={() => setShowChartSettings(true)}
+                    onSaveChart={handleSaveCurrentChart}
                   />
                 </div>
                 
@@ -415,8 +521,6 @@ const App = () => {
               </div>
             )}
           </div>
-
-          {/* Removido painel lateral de configurações */}
         </div>
 
         {/* Data Editor - Full Width */}
@@ -464,7 +568,7 @@ const App = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3 text-xs text-gray-600 dark:text-gray-400 opacity-75 hover:opacity-100 transition-opacity">
             <div className="font-medium mb-1">Atalhos:</div>
             <div>Ctrl+S: Salvar | Ctrl+O: Abrir | Ctrl+I: Importar | Ctrl+E: Exportar</div>
-            <div>Tab: Alternar vista | 1-5: Tipos de gráfico</div>
+            <div>Ctrl+N: Navegação | ESC: Voltar | 1-5: Tipos de gráfico</div>
           </div>
         </div>
       </div>

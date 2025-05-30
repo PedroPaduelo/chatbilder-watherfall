@@ -12,6 +12,7 @@ export interface ToolbarProps {
   onSaveView: () => void;
   onManageViews: () => void;
   onShowChartSettings: () => void;
+  onSaveChart?: () => Promise<void>;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -23,7 +24,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onExportHTML,
   onSaveView,
   onManageViews,
-  onShowChartSettings
+  onShowChartSettings,
+  onSaveChart
 }) => {
   const getImportButtonText = (type: ChartType): string => {
     const typeNames = {
@@ -53,6 +55,18 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <Save size={16} />
           Salvar
         </button>
+        
+        {onSaveChart && (
+          <button
+            type="button"
+            onClick={onSaveChart}
+            className="px-3 py-2 bg-indigo-600 dark:bg-indigo-700 text-white rounded hover:bg-indigo-700 dark:hover:bg-indigo-800 flex items-center gap-2 text-sm transition-colors"
+            title="Salvar Gráfico Atual"
+          >
+            <Save size={16} />
+            Salvar Gráfico
+          </button>
+        )}
         
         <button
           type="button"
