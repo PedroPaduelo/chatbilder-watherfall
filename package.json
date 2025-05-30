@@ -10,15 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@visx/axis": "^3.12.0",
-    "@visx/group": "^3.12.0",
-    "@visx/scale": "^3.12.0",
-    "@visx/shape": "^3.12.0",
-    "@visx/tooltip": "^3.12.0",
     "lucide-react": "^0.460.0",
     "papaparse": "^5.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "recharts": "^2.8.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

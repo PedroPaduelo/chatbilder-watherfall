@@ -31,6 +31,23 @@ export interface ProcessedSegment extends StackedSegment {
   height: number;
 }
 
+// New Recharts-compatible data interfaces
+export interface RechartsDataPoint {
+  name: string;
+  value: number;
+  start: number;
+  end: number;
+  type: 'baseline' | 'increase' | 'decrease' | 'subtotal' | 'total';
+  color?: string;
+  segments?: StackedSegment[];
+  originalData: DataRow;
+}
+
+export interface RechartsSegmentData {
+  name: string;
+  [key: string]: string | number; // Dynamic keys for each segment
+}
+
 export interface ChartSettings {
   barWidth: number;
   barSpacing: number;
