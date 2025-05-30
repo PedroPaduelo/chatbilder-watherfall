@@ -93,6 +93,43 @@ O Universal Chart Builder é uma aplicação completa que permite criar, persona
 - Filtros personalizados
 - Combinação de múltiplos filtros
 
+## 📊 Chart Import and Configuration Components
+
+### Import Components
+Each chart type has an associated import component that allows users to download sample data templates:
+
+- **WaterfallChartImport**: Download sample data for Waterfall Chart in CSV and JSON formats.
+- **StackedBarChartImport**: Download sample data for Stacked Bar Chart in CSV and JSON formats.
+- **LineChartImport**: Download sample data for Line Chart in CSV and JSON formats.
+- **AreaChartImport**: Download sample data for Area Chart in CSV and JSON formats.
+- **SankeyChartImport**: Download sample data for Sankey Chart in JSON format.
+
+### Configuration Components
+Each chart type also has a configuration component for customizing chart-specific settings:
+
+- **WaterfallChartConfig**: Customize bar width, spacing, and accent color.
+- **StackedBarChartConfig**: Customize bar width, spacing, and accent color.
+- **LineChartConfig**: Customize line width and accent color.
+- **AreaChartConfig**: Customize area opacity and accent color.
+- **SankeyChartConfig**: Customize node width, spacing, and accent color.
+
+### Usage
+To use these components, import them into your desired file and include them in your JSX:
+
+```tsx
+import WaterfallChartImport from './components/WaterfallChartImport';
+import WaterfallChartConfig from './components/WaterfallChartConfig';
+
+const App = () => (
+  <div>
+    <WaterfallChartImport />
+    <WaterfallChartConfig settings={settings} onSettingsChange={handleSettingsChange} />
+  </div>
+);
+```
+
+Replace `settings` and `handleSettingsChange` with your application's state and handler functions.
+
 ## 🛠 Tecnologias e Arquitetura
 
 ### **Frontend Stack**

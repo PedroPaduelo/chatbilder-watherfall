@@ -203,7 +203,7 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
     });
 
     // Posicionar nós horizontalmente
-    const levelWidth = Math.max(60, chartWidth / (maxLevel + 1)); // Largura mínima por nível
+    const levelWidth = Math.max(80, chartWidth / (nodesByLevel.length)); // Largura mínima ajustada
     nodesByLevel.forEach((levelNodes, level) => {
       const x = level * levelWidth + levelWidth / 2 - 7.5;
       levelNodes.forEach(node => {
@@ -211,32 +211,39 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
       });
     });
 
-    // Algoritmo melhorado de posicionamento vertical
+    // Nova lógica de posicionamento vertical para ocupar toda a altura
     const positionVertically = () => {
-      // Primeiro passo: distribuição inicial uniforme
       nodesByLevel.forEach(levelNodes => {
-        // Ordenar por valor para estabilidade
+        // Ordenar nós por valor para estabilidade
         levelNodes.sort((a, b) => b.value - a.value || a.index - b.index);
-        
         const totalNodeHeight = levelNodes.reduce((sum, node) => sum + node.height, 0);
-        const availableSpace = chartHeight - totalNodeHeight;
-        const minSpacing = 8;
-        const idealSpacing = Math.max(minSpacing, availableSpace / (levelNodes.length + 1));
-        
-        let currentY = idealSpacing;
-        levelNodes.forEach(node => {
-          node.y = currentY;
-          currentY += node.height + idealSpacing;
+        const n = levelNodes.length;
+        let spacing = 0;
+        if (n > 1) {
+          spacing = (chartHeight - totalNodeHeight) / (n - 1);
+        } else {
+          // Se só tem um nó, centraliza
+          spacing = 0;
+        }
+        let currentY = 0;
+        levelNodes.forEach((node, i) => {
+          // Se só tem um nó, centraliza
+          if (n === 1) {
+            node.y = (chartHeight - node.height) / 2;
+          } else {
+            node.y = currentY;
+            currentY += node.height + spacing;
+          }
         });
       });
 
-      // Otimização iterativa com convergência melhorada
-      const maxIterations = 12;
-      const alpha = 0.3; // Fator de amortecimento para estabilidade
-      
+      // Otimização iterativa para resolver sobreposições
+      const maxIterations = 20;
+      const alpha = 0.5; // Fator de amortecimento ajustado para convergência mais suave
+
       for (let iteration = 0; iteration < maxIterations; iteration++) {
         let totalMovement = 0;
-        
+
         // Ajustar baseado nos targets (esquerda para direita)
         for (let level = 0; level < nodesByLevel.length - 1; level++) {
           nodesByLevel[level].forEach(node => {
@@ -245,7 +252,7 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
                 return sum + (link.targetNode.y + link.targetNode.height / 2) * link.value;
               }, 0);
               const totalWeight = node.sourceLinks.reduce((sum, link) => sum + link.value, 0);
-              
+
               if (totalWeight > 0) {
                 const idealY = weightedY / totalWeight - node.height / 2;
                 const oldY = node.y;
@@ -264,7 +271,7 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
                 return sum + (link.sourceNode.y + link.sourceNode.height / 2) * link.value;
               }, 0);
               const totalWeight = node.targetLinks.reduce((sum, link) => sum + link.value, 0);
-              
+
               if (totalWeight > 0) {
                 const idealY = weightedY / totalWeight - node.height / 2;
                 const oldY = node.y;
@@ -275,47 +282,28 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
           });
         }
 
-        // Resolver sobreposições com algoritmo melhorado
+        // Resolver sobreposições
         nodesByLevel.forEach(levelNodes => {
           levelNodes.sort((a, b) => a.y - b.y);
-          
-          const minGap = 8;
-          let totalOverlap = 0;
-          
-          // Primeira passada: detectar sobreposições
+
+          const minGap = 12; // Espaçamento mínimo ajustado
           for (let i = 1; i < levelNodes.length; i++) {
             const current = levelNodes[i];
             const previous = levelNodes[i - 1];
             const requiredY = previous.y + previous.height + minGap;
-            
+
             if (current.y < requiredY) {
-              totalOverlap += requiredY - current.y;
-            }
-          }
-          
-          // Segunda passada: distribuir correções proporcionalmente
-          if (totalOverlap > 0) {
-            const compressionFactor = Math.min(1, (chartHeight - levelNodes[levelNodes.length - 1].height) / 
-              (levelNodes[levelNodes.length - 1].y + totalOverlap));
-            
-            for (let i = 1; i < levelNodes.length; i++) {
-              const current = levelNodes[i];
-              const previous = levelNodes[i - 1];
-              const requiredY = previous.y + previous.height + minGap;
-              
-              if (current.y < requiredY) {
-                current.y = requiredY * compressionFactor;
-              }
+              current.y = requiredY;
             }
           }
         });
 
-        // Garantir limites com margem de segurança
+        // Garantir limites
         nodes.forEach(node => {
           node.y = Math.max(5, Math.min(chartHeight - node.height - 5, node.y));
         });
-        
-        // Convergência: parar se pouco movimento
+
+        // Parar se o movimento for mínimo
         if (totalMovement < 1) {
           break;
         }

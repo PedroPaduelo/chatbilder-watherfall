@@ -1,35 +1,53 @@
 import React from 'react';
-import { Download, Upload, Image, FileText, Save, BookOpen } from 'lucide-react';
+import { Download, Upload, Image, FileText, Save, BookOpen, Settings } from 'lucide-react';
+import type { ChartType } from '../types';
 
 export interface ToolbarProps {
+  chartType: ChartType;
   onImportCSV: () => void;
-  onFileUpload: () => void;
   onExportPNG: () => void;
   onExportSVG: () => void;
   onExportJSON: () => void;
   onExportHTML: () => void;
   onSaveView: () => void;
   onManageViews: () => void;
+  onShowChartSettings: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
+  chartType,
   onImportCSV,
-  onFileUpload,
   onExportPNG,
   onExportSVG,
   onExportJSON,
   onExportHTML,
   onSaveView,
-  onManageViews
+  onManageViews,
+  onShowChartSettings
 }) => {
+  const getImportButtonText = (type: ChartType): string => {
+    const typeNames = {
+      waterfall: 'Waterfall',
+      'stacked-bar': 'Stacked Bar',
+      line: 'Line Chart',
+      area: 'Area Chart',
+      sankey: 'Sankey'
+    };
+    return `Importar ${typeNames[type] || 'Dados'}`;
+  };
+
+  const getImportButtonFormat = (type: ChartType): string => {
+    return type === 'sankey' ? 'JSON' : 'CSV/JSON';
+  };
+
   return (
     <div className="flex flex-wrap gap-2">
       {/* Saved Views Section */}
-      <div className="flex gap-2 border-r border-gray-200 pr-2">
+      <div className="flex gap-2 border-r border-gray-200 dark:border-gray-600 pr-2">
         <button
           type="button"
           onClick={onSaveView}
-          className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2 text-sm transition-colors"
+          className="px-3 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 flex items-center gap-2 text-sm transition-colors"
           title="Salvar Visualização Atual"
         >
           <Save size={16} />
@@ -39,7 +57,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <button
           type="button"
           onClick={onManageViews}
-          className="px-3 py-2 border border-blue-300 text-blue-700 rounded hover:bg-blue-50 flex items-center gap-2 text-sm transition-colors"
+          className="px-3 py-2 border border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2 text-sm transition-colors"
           title="Gerenciar Visualizações Salvas"
         >
           <BookOpen size={16} />
@@ -48,24 +66,31 @@ const Toolbar: React.FC<ToolbarProps> = ({
       </div>
 
       {/* Import Section */}
-      <div className="flex gap-2 border-r border-gray-200 pr-2">
+      <div className="flex gap-2 border-r border-gray-200 dark:border-gray-600 pr-2">
         <button
           type="button"
           onClick={onImportCSV}
-          className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2 text-sm transition-colors"
-          title="Import CSV with Template"
+          className="px-3 py-2 bg-green-600 dark:bg-green-700 text-white rounded hover:bg-green-700 dark:hover:bg-green-800 flex items-center gap-2 text-sm transition-colors"
+          title={`${getImportButtonText(chartType)} com Template e Validação`}
         >
           <Upload size={16} />
-          Import CSV
+          <div className="flex flex-col items-start">
+            <span>{getImportButtonText(chartType)}</span>
+            <span className="text-xs opacity-75">{getImportButtonFormat(chartType)}</span>
+          </div>
         </button>
-        
+      </div>
+
+      {/* Chart Settings Section */}
+      <div className="flex gap-2 border-r border-gray-200 dark:border-gray-600 pr-2">
         <button
           type="button"
-          onClick={onFileUpload}
-          className="p-2 border rounded hover:bg-gray-50 transition-colors"
-          title="Upload Excel/CSV File"
+          onClick={onShowChartSettings}
+          className="px-3 py-2 bg-purple-600 dark:bg-purple-700 text-white rounded hover:bg-purple-700 dark:hover:bg-purple-800 flex items-center gap-2 text-sm transition-colors"
+          title="Configurações Específicas do Gráfico"
         >
-          <Upload size={20} />
+          <Settings size={16} />
+          Config. {chartType ? chartType.charAt(0).toUpperCase() + chartType.slice(1) : 'Gráfico'}
         </button>
       </div>
       
@@ -74,7 +99,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <button
           type="button"
           onClick={onExportPNG}
-          className="p-2 border rounded hover:bg-gray-50 transition-colors"
+          className="p-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
           title="Export as PNG"
         >
           <Image size={20} />
@@ -83,7 +108,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <button
           type="button"
           onClick={onExportSVG}
-          className="p-2 border rounded hover:bg-gray-50 transition-colors"
+          className="p-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
           title="Export as SVG"
         >
           <FileText size={20} />
@@ -92,7 +117,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <button
           type="button"
           onClick={onExportJSON}
-          className="p-2 border rounded hover:bg-gray-50 transition-colors"
+          className="p-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
           title="Export as JSON"
         >
           <Download size={20} />
@@ -101,7 +126,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <button
           type="button"
           onClick={onExportHTML}
-          className="p-2 border rounded hover:bg-gray-50 transition-colors"
+          className="p-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
           title="Export as HTML"
         >
           <FileText size={20} />
