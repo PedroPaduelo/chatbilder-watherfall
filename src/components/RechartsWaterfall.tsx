@@ -18,6 +18,8 @@ import { formatValue } from '../utils/helpers';
 interface RechartsWaterfallProps {
   data: DataRow[];
   settings: ChartSettings;
+  selectedBarId?: string;
+  onBarSelect?: (barId: string | undefined) => void;
 }
 
 // Custom waterfall bar component
@@ -164,7 +166,9 @@ const ConnectorLines = ({ data, settings }: any) => {
 
 const RechartsWaterfall: React.FC<RechartsWaterfallProps> = ({
   data,
-  settings
+  settings,
+  selectedBarId,
+  onBarSelect
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const { waterfallData } = useRechartsData(data);
@@ -198,6 +202,12 @@ const RechartsWaterfall: React.FC<RechartsWaterfallProps> = ({
 
   const handleMouseLeave = () => {
     setHoveredIndex(null);
+  };
+
+  const handleBarClick = (data: any) => {
+    if (onBarSelect) {
+      onBarSelect(data.payload.id);
+    }
   };
 console.log({ chartData, settings, data });
   return (
@@ -276,6 +286,7 @@ console.log({ chartData, settings, data });
             stackId="waterfall"
             maxBarSize={settings.barWidth}
             shape={(props: any) => <CustomWaterfallBar {...props} settings={settings} />}
+            onClick={handleBarClick}
           >
             {chartData.map((entry, index) => (
               <Cell

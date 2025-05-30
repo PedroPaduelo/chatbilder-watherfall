@@ -18,6 +18,8 @@ interface RechartsStackedBarsProps {
   segmentKeys: string[];
   segmentColors: Record<string, string>;
   settings: ChartSettings;
+  selectedBarId?: string;
+  onBarSelect?: (barId: string | undefined) => void;
   width?: number;
   height?: number;
 }
