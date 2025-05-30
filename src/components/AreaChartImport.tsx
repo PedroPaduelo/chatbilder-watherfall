@@ -1,10 +1,12 @@
 import React from 'react';
 import { areaChartSampleData } from '../utils/sampleData';
 import { ExportService } from '../services/exportService';
+import { defaultSettings } from '../utils/constants';
 
 const AreaChartImport: React.FC = () => {
   const handleDownloadCSV = () => {
-    const csvData = areaChartSampleData.map(row => ({
+    const csvData = areaChartSampleData.map((row, index) => ({
+      id: row.id || `${index + 1}`,
       category: row.category,
       value: row.value,
       type: row.type,
@@ -14,7 +16,7 @@ const AreaChartImport: React.FC = () => {
   };
 
   const handleDownloadJSON = () => {
-    ExportService.exportAsJSON(areaChartSampleData, {}, 'area-chart-sample.json');
+    ExportService.exportAsJSON(areaChartSampleData, defaultSettings, 'area-chart-sample.json');
   };
 
   return (

@@ -46,10 +46,8 @@ const UniversalChartRenderer: React.FC<UniversalChartRendererProps> = ({
     }
   };
 
-  // Função de debug para abrir o modal
-  const handleOpenConfigModal = () => {
-    console.log("Abrindo o modal de configurações");
-    setConfigModalOpen(true);
+  const handleDataChange = (newData: DataRow[]) => {
+    setData(newData);
   };
 
   // Get the appropriate data for the current chart type

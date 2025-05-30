@@ -17,6 +17,9 @@ export const defaultSettings: ChartSettings = {
   primaryColor: '#374151', // Cor primária para elementos gerais
   backgroundColor: '#ffffff', // Cor de fundo
   title: '', // Título opcional do gráfico
+  // Add missing properties for area and line charts
+  areaOpacity: 0.3,
+  lineWidth: 2,
   // New label customization settings
   labelSettings: {
     categoryFontSize: 12,
@@ -101,6 +104,7 @@ export const UI_CONSTANTS = {
       SVG: 'waterfall-chart.svg',
       JSON: 'waterfall-chart-data.json',
       HTML: 'waterfall-chart.html',
+      CSV: 'waterfall-chart-data.csv',
     },
   },
   NOTIFICATIONS: {

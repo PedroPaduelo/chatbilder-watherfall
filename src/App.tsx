@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import UniversalChartRenderer from './components/UniversalChartRenderer';
 import ChartTypeSelector from './components/ChartTypeSelector';
 import DataEditor from './components/DataEditor';
-import SettingsPanel from './components/SettingsPanel';
 import CSVImporter from './components/CSVImporter';
 import Toolbar from './components/Toolbar';
 import SaveViewModal from './components/SaveViewModal';
@@ -391,7 +390,6 @@ const App = () => {
                   <Toolbar
                     chartType={selectedChartType}
                     onImportCSV={() => setShowCSVImporter(true)}
-                    onFileUpload={() => fileInputRef.current?.click()}
                     onExportPNG={handleExportPNG}
                     onExportSVG={handleExportSVG}
                     onExportJSON={handleExportJSON}

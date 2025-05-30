@@ -1,4 +1,4 @@
-import type { DataRow, ChartSettings } from '../types';
+import type { DataRow, ChartSettings, SankeyData } from '../types';
 import { UI_CONSTANTS } from '../utils/constants';
 
 export interface ExportData {
@@ -105,13 +105,27 @@ export class ExportService {
   }
 
   /**
-   * Export data as JSON
+   * Export data as CSV
    */
-  static exportAsJSON(data: DataRow[], settings: ChartSettings, filename = UI_CONSTANTS.FILES.DEFAULT_FILENAMES.JSON): void {
-    const exportData: ExportData = {
+  static exportAsCSV(data: any[], filename: string = 'data.csv'): void {
+    if (!data || data.length === 0) {
+      throw new Error('No data to export');
+    }
+
+    const csvContent = this.formatCSVData(data);
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    this.downloadBlob(blob, filename);
+  }
+
+  /**
+   * Export data as JSON (overloaded for different data types)
+   */
+  static exportAsJSON(data: any, settings: any, filename: string = 'data.json'): void {
+    const exportData = {
       data,
       settings,
-      version: '3.0' // Updated version for Recharts
+      version: '3.0'
     };
     
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -308,5 +322,24 @@ export class ExportService {
     link.href = URL.createObjectURL(blob);
     link.click();
     URL.revokeObjectURL(link.href);
+  }
+
+  private static formatCSVData(data: any[]): string {
+    if (!data.length) return '';
+    
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => 
+        headers.map(header => {
+          const value = row[header as keyof typeof row];
+          return typeof value === 'string' && value.includes(',') 
+            ? `"${value}"` 
+            : value;
+        }).join(',')
+      )
+    ].join('\n');
+    
+    return csvContent;
   }
 }

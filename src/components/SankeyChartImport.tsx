@@ -1,12 +1,23 @@
 import React from 'react';
-import { getSankeySampleData } from '../utils/sampleData';
+import { sankeyData } from '../utils/sampleData';
 import { ExportService } from '../services/exportService';
+import { defaultSettings } from '../utils/constants';
 
 const SankeyChartImport: React.FC = () => {
-  const sankeySampleData = getSankeySampleData();
+  const handleDownloadCSV = () => {
+    // Convert sankey data to CSV format
+    const csvData = sankeyData.nodes.map((node, index) => ({
+      id: node.id || `${index + 1}`,
+      name: node.name,
+      category: node.category || 'default',
+      value: node.value || 0,
+      type: 'node'
+    }));
+    ExportService.exportAsCSV(csvData, 'sankey-chart-sample.csv');
+  };
 
   const handleDownloadJSON = () => {
-    ExportService.exportAsJSON(sankeySampleData, {}, 'sankey-sample.json');
+    ExportService.exportAsJSON(sankeyData, defaultSettings, 'sankey-chart-sample.json');
   };
 
   return (
@@ -21,6 +32,12 @@ const SankeyChartImport: React.FC = () => {
           className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
         >
           Download JSON
+        </button>
+        <button
+          onClick={handleDownloadCSV}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Download CSV
         </button>
       </div>
     </div>

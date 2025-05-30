@@ -1,10 +1,12 @@
 import React from 'react';
 import { waterfallSampleData } from '../utils/sampleData';
 import { ExportService } from '../services/exportService';
+import { defaultSettings } from '../utils/constants';
 
 const WaterfallChartImport: React.FC = () => {
   const handleDownloadCSV = () => {
-    const csvData = waterfallSampleData.map(row => ({
+    const csvData = waterfallSampleData.map((row, index) => ({
+      id: row.id || `${index + 1}`,
       category: row.category,
       value: row.value,
       type: row.type,
@@ -14,7 +16,7 @@ const WaterfallChartImport: React.FC = () => {
   };
 
   const handleDownloadJSON = () => {
-    ExportService.exportAsJSON(waterfallSampleData, {}, 'waterfall-sample.json');
+    ExportService.exportAsJSON(waterfallSampleData, defaultSettings, 'waterfall-sample.json');
   };
 
   return (

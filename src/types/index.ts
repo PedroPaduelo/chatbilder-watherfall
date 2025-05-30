@@ -66,6 +66,9 @@ export interface ChartSettings {
   primaryColor: string; // Cor primária para elementos gerais
   backgroundColor: string; // Cor de fundo
   title?: string; // Título opcional do gráfico
+  // Chart-specific properties
+  areaOpacity: number; // For area charts
+  lineWidth: number; // For line charts
   // New label customization settings
   labelSettings: {
     categoryFontSize: number;

@@ -2,27 +2,34 @@ import { useState, useCallback, useMemo } from 'react';
 import type { DataRow } from '../types';
 
 export interface FilterState {
-  searchTerm: string;
-  selectedTypes: string[];
+  searchText: string; // Changed from searchTerm to searchText
+  selectedType: string; // Changed from selectedTypes to selectedType (single value)
   dateRange?: {
     start: Date;
     end: Date;
   };
-  valueRange?: {
+  valueRange: {
     min: number;
     max: number;
-  };
+  }; // Made required and removed optional
   hiddenCategories: Set<string>;
+  isVisible: boolean;
+  showPositiveOnly: boolean;
+  showNegativeOnly: boolean;
 }
 
 interface FilterActions {
-  setSearchTerm: (term: string) => void;
-  setSelectedTypes: (types: string[]) => void;
+  setSearchText: (text: string) => void; // Changed from setSearchTerm
+  setSelectedType: (type: string) => void; // Changed from setSelectedTypes
   setDateRange: (range: FilterState['dateRange']) => void;
   setValueRange: (range: FilterState['valueRange']) => void;
   toggleCategory: (category: string) => void;
   clearFilters: () => void;
   resetToDefaults: () => void;
+  toggleVisibility: () => void;
+  resetAll: () => void;
+  setShowPositiveOnly: (show: boolean) => void;
+  setShowNegativeOnly: (show: boolean) => void;
 }
 
 interface UseFiltersReturn {
@@ -33,20 +40,24 @@ interface UseFiltersReturn {
 }
 
 const defaultFilters: FilterState = {
-  searchTerm: '',
-  selectedTypes: [],
+  searchText: '', // Changed from searchTerm
+  selectedType: '', // Changed from selectedTypes array to single string
   hiddenCategories: new Set(),
+  isVisible: true,
+  showPositiveOnly: false,
+  showNegativeOnly: false,
+  valueRange: { min: 0, max: 0 }, // Added default valueRange
 };
 
 export const useFilters = (data: DataRow[]): UseFiltersReturn => {
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
 
-  const setSearchTerm = useCallback((term: string) => {
-    setFilters(prev => ({ ...prev, searchTerm: term }));
+  const setSearchText = useCallback((text: string) => {
+    setFilters(prev => ({ ...prev, searchText: text }));
   }, []);
 
-  const setSelectedTypes = useCallback((types: string[]) => {
-    setFilters(prev => ({ ...prev, selectedTypes: types }));
+  const setSelectedType = useCallback((type: string) => {
+    setFilters(prev => ({ ...prev, selectedType: type }));
   }, []);
 
   const setDateRange = useCallback((range: FilterState['dateRange']) => {
@@ -77,26 +88,54 @@ export const useFilters = (data: DataRow[]): UseFiltersReturn => {
     setFilters({ ...defaultFilters, hiddenCategories: new Set() });
   }, []);
 
+  const toggleVisibility = useCallback(() => {
+    setFilters(prev => ({ ...prev, isVisible: !prev.isVisible }));
+  }, []);
+
+  const setShowPositiveOnly = useCallback((show: boolean) => {
+    setFilters(prev => ({ ...prev, showPositiveOnly: show }));
+  }, []);
+
+  const setShowNegativeOnly = useCallback((show: boolean) => {
+    setFilters(prev => ({ ...prev, showNegativeOnly: show }));
+  }, []);
+
+  const resetAll = useCallback(() => {
+    setFilters(defaultFilters);
+  }, []);
+
   const filteredData = useMemo(() => {
     return data.filter(item => {
       // Search term filter
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
+      if (filters.searchText) {
+        const searchLower = filters.searchText.toLowerCase();
         if (!item.category.toLowerCase().includes(searchLower)) {
           return false;
         }
       }
 
-      // Type filter
-      if (filters.selectedTypes.length > 0 && !filters.selectedTypes.includes(item.type)) {
+      // Type filter - changed to work with single value
+      if (filters.selectedType && filters.selectedType !== item.type) {
         return false;
       }
 
       // Value range filter
       if (filters.valueRange) {
-        if (item.value < filters.valueRange.min || item.value > filters.valueRange.max) {
+        if (filters.valueRange.min > 0 && item.value < filters.valueRange.min) {
           return false;
         }
+        if (filters.valueRange.max > 0 && item.value > filters.valueRange.max) {
+          return false;
+        }
+      }
+
+      // Positive/negative filters
+      if (filters.showPositiveOnly && item.value <= 0) {
+        return false;
+      }
+      
+      if (filters.showNegativeOnly && item.value >= 0) {
+        return false;
       }
 
       // Hidden categories
@@ -110,22 +149,28 @@ export const useFilters = (data: DataRow[]): UseFiltersReturn => {
 
   const isFiltered = useMemo(() => {
     return (
-      filters.searchTerm !== '' ||
-      filters.selectedTypes.length > 0 ||
+      filters.searchText !== '' ||
+      filters.selectedType !== '' ||
       filters.dateRange !== undefined ||
-      filters.valueRange !== undefined ||
-      filters.hiddenCategories.size > 0
+      (filters.valueRange && (filters.valueRange.min > 0 || filters.valueRange.max > 0)) ||
+      filters.hiddenCategories.size > 0 ||
+      filters.showPositiveOnly ||
+      filters.showNegativeOnly
     );
   }, [filters]);
 
   const actions: FilterActions = {
-    setSearchTerm,
-    setSelectedTypes,
+    setSearchText, // Changed from setSearchTerm
+    setSelectedType, // Changed from setSelectedTypes
     setDateRange,
     setValueRange,
     toggleCategory,
     clearFilters,
     resetToDefaults,
+    toggleVisibility,
+    setShowPositiveOnly,
+    setShowNegativeOnly,
+    resetAll,
   };
 
   return {

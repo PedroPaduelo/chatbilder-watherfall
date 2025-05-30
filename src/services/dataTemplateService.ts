@@ -407,22 +407,25 @@ Março,Vendas B2B,16000,Vendas para empresas`,
         }
         break;
 
-      case 'sankey':
-        // Para Sankey, validar estrutura JSON
-        if (typeof data === 'object' && data.nodes && data.links) {
-          const nodeIds = data.nodes.map((n: any) => n.id);
-          data.links.forEach((link: any, index: number) => {
-            if (!nodeIds.includes(link.source)) {
-              errors.push(`Link ${index + 1}: source "${link.source}" não encontrado nos nós`);
-            }
-            if (!nodeIds.includes(link.target)) {
-              errors.push(`Link ${index + 1}: target "${link.target}" não encontrado nos nós`);
-            }
-          });
-        } else {
-          errors.push('Dados Sankey devem ter estrutura {nodes: [], links: []}');
+      // Validate Sankey data structure
+      if (chartType === 'sankey') {
+        if (Array.isArray(data) && data.length > 0) {
+          // Check if data is already in the correct format
+          if (data[0].hasOwnProperty('nodes') && data[0].hasOwnProperty('links')) {
+            const sankeyData = data[0] as { nodes: any[]; links: any[] };
+            return {
+              nodes: sankeyData.nodes || [],
+              links: sankeyData.links || []
+            };
+          }
+          // Convert regular data to Sankey format
+          return {
+            nodes: [],
+            links: []
+          };
         }
-        break;
+        return { nodes: [], links: [] };
+      }
     }
 
     return {
