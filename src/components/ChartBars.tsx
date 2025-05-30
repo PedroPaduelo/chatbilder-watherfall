@@ -40,8 +40,6 @@ const ChartBars: React.FC<ChartBarsProps> = ({
                       ? adjustColor(segment.cor, 0.8)
                       : segment.cor
                   }
-                  rx={segmentIndex === 0 ? settings.borderRadius : 0}
-                  ry={segmentIndex === 0 ? settings.borderRadius : 0}
                   onMouseEnter={() => onSegmentHover({ barId: bar.id, segmentIndex })}
                   onMouseLeave={() => onSegmentHover(null)}
                   style={{
@@ -76,8 +74,6 @@ const ChartBars: React.FC<ChartBarsProps> = ({
               fill={hoveredBar === bar.id 
                 ? adjustColor(bar.color || settings.colors[bar.type], 0.8)
                 : bar.color || settings.colors[bar.type]}
-              rx={settings.borderRadius}
-              ry={settings.borderRadius}
               onMouseEnter={() => onBarHover(bar.id)}
               onMouseLeave={() => onBarHover(null)}
               style={{

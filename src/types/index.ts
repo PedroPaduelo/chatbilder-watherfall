@@ -35,12 +35,14 @@ export interface ProcessedSegment extends StackedSegment {
 export interface RechartsDataPoint {
   name: string;
   value: number;
+  originalValue: number; // Preserve original category value
   start: number;
   end: number;
   type: 'baseline' | 'increase' | 'decrease' | 'subtotal' | 'total';
   color?: string;
   segments?: StackedSegment[];
   originalData: DataRow;
+  id?: string;
 }
 
 export interface RechartsSegmentData {
@@ -51,7 +53,6 @@ export interface RechartsSegmentData {
 export interface ChartSettings {
   barWidth: number;
   barSpacing: number;
-  borderRadius: number;
   showConnectors: boolean;
   showValues: boolean;
   showCategories: boolean;

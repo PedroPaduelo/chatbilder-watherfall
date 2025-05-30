@@ -20,12 +20,14 @@ export const useRechartsData = (data: DataRow[]) => {
       return {
         name: item.category,
         value: item.value,
+        originalValue: item.value, // Preserve original value
         start,
         end: cumulative,
         type: item.type,
         color: item.color,
         segments: item.segments,
-        originalData: item
+        originalData: item,
+        id: item.id
       };
     });
 

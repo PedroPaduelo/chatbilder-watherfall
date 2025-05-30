@@ -4,7 +4,6 @@ import type { ChartSettings, DataRow } from '../types';
 export const defaultSettings: ChartSettings = {
   barWidth: 60,
   barSpacing: 20,
-  borderRadius: 4,
   showConnectors: true,
   showValues: true,
   showCategories: true,
@@ -111,8 +110,6 @@ export const VALIDATION = {
   MAX_BAR_WIDTH: 200,
   MIN_BAR_SPACING: 0,
   MAX_BAR_SPACING: 100,
-  MIN_BORDER_RADIUS: 0,
-  MAX_BORDER_RADIUS: 20,
   MIN_FONT_SIZE: 8,
   MAX_FONT_SIZE: 32,
 } as const;

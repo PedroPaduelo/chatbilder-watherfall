@@ -228,7 +228,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
                 onSettingsChange({
                   barWidth: 60,
                   barSpacing: 20,
-                  borderRadius: 4,
                   showConnectors: true,
                   showValues: true,
                   showCategories: true,
@@ -237,7 +236,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
                   valuePrefix: '',
                   valueSuffix: '',
                   showGridlines: true,
-                  showAxes: true, // Incluindo a nova propriedade
+                  showAxes: true,
                   labelSettings: {
                     categoryFontSize: 12,
                     categoryFontColor: '#374151',
@@ -297,16 +296,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
               unit="px"
               onChange={value => handleChange('barSpacing', value)}
               tooltip="Distância entre as barras adjacentes"
-            />
-            
-            <RangeSlider
-              label="Bordas Arredondadas"
-              value={settings.borderRadius}
-              min={0}
-              max={20}
-              unit="px"
-              onChange={value => handleChange('borderRadius', value)}
-              tooltip="Raio das bordas arredondadas das barras"
             />
           </SettingSection>
 

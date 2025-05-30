@@ -46,8 +46,6 @@ const CustomWaterfallBar = (props: any) => {
               width={width}
               height={segmentHeight}
               fill={segment.cor}
-              rx={index === 0 ? settings.borderRadius : 0}
-              ry={index === 0 ? settings.borderRadius : 0}
             />
           );
           segmentY += segmentHeight;
@@ -65,8 +63,6 @@ const CustomWaterfallBar = (props: any) => {
       width={width}
       height={Math.abs(height)}
       fill={color}
-      rx={settings.borderRadius}
-      ry={settings.borderRadius}
     />
   );
 };
@@ -81,7 +77,7 @@ const CustomTooltip = ({ active, payload, label, settings }: any) => {
       <div className="bg-gray-800 text-white px-3 py-2 rounded text-sm shadow-lg border border-gray-600">
         <p className="font-semibold mb-1">{label}</p>
         <p className="text-blue-200">
-          Valor: {formatValue(data.value, settings.valuePrefix, settings.valueSuffix)}
+          Valor: {formatValue(data.displayValue || data.originalValue, settings.valuePrefix, settings.valueSuffix)}
         </p>
         {data.type !== 'baseline' && data.type !== 'total' && (
           <p className="text-gray-300 text-xs">
@@ -114,11 +110,13 @@ const CustomTooltip = ({ active, payload, label, settings }: any) => {
 
 // Custom label component
 const CustomLabel = (props: any) => {
-  const { x, y, width, height, value, settings } = props;
+  const { x, y, width, height, value, settings, payload } = props;
   
   if (!settings.showValues) return null;
   
-  const isNegative = value < 0;
+  // Use the original value from the data instead of the transformed value
+  const displayValue = payload?.displayValue || payload?.originalValue || value;
+  const isNegative = displayValue < 0;
   const labelY = isNegative ? y + Math.abs(height) + 15 : y - 5;
   
   return (
@@ -130,7 +128,7 @@ const CustomLabel = (props: any) => {
       fontSize={settings.labelSettings?.valueFontSize || 14}
       fontWeight={settings.labelSettings?.valueFontWeight || 'bold'}
     >
-      {formatValue(value, settings.valuePrefix, settings.valueSuffix)}
+      {formatValue(displayValue, settings.valuePrefix, settings.valueSuffix)}
     </text>
   );
 };
