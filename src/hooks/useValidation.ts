@@ -63,24 +63,17 @@ export const useValidation = () => {
       errors.push(`Bar spacing must be between ${VALIDATION.MIN_BAR_SPACING} and ${VALIDATION.MAX_BAR_SPACING}`);
     }
     
-    if (settings.borderRadius < VALIDATION.MIN_BORDER_RADIUS || settings.borderRadius > VALIDATION.MAX_BORDER_RADIUS) {
-      errors.push(`Border radius must be between ${VALIDATION.MIN_BORDER_RADIUS} and ${VALIDATION.MAX_BORDER_RADIUS}`);
+    // Validate font sizes
+    if (settings.labelSettings?.categoryFontSize && 
+        (settings.labelSettings.categoryFontSize < VALIDATION.MIN_FONT_SIZE || 
+         settings.labelSettings.categoryFontSize > VALIDATION.MAX_FONT_SIZE)) {
+      errors.push(`Tamanho da fonte das categorias deve estar entre ${VALIDATION.MIN_FONT_SIZE} e ${VALIDATION.MAX_FONT_SIZE}`);
     }
-    
-    if (settings.labelSettings) {
-      const { categoryFontSize, valueFontSize, segmentLabelFontSize } = settings.labelSettings;
-      
-      if (categoryFontSize < VALIDATION.MIN_FONT_SIZE || categoryFontSize > VALIDATION.MAX_FONT_SIZE) {
-        errors.push(`Category font size must be between ${VALIDATION.MIN_FONT_SIZE} and ${VALIDATION.MAX_FONT_SIZE}`);
-      }
-      
-      if (valueFontSize < VALIDATION.MIN_FONT_SIZE || valueFontSize > VALIDATION.MAX_FONT_SIZE) {
-        errors.push(`Value font size must be between ${VALIDATION.MIN_FONT_SIZE} and ${VALIDATION.MAX_FONT_SIZE}`);
-      }
-      
-      if (segmentLabelFontSize < VALIDATION.MIN_FONT_SIZE || segmentLabelFontSize > VALIDATION.MAX_FONT_SIZE) {
-        errors.push(`Segment label font size must be between ${VALIDATION.MIN_FONT_SIZE} and ${VALIDATION.MAX_FONT_SIZE}`);
-      }
+
+    if (settings.labelSettings?.valueFontSize && 
+        (settings.labelSettings.valueFontSize < VALIDATION.MIN_FONT_SIZE || 
+         settings.labelSettings.valueFontSize > VALIDATION.MAX_FONT_SIZE)) {
+      errors.push(`Tamanho da fonte dos valores deve estar entre ${VALIDATION.MIN_FONT_SIZE} e ${VALIDATION.MAX_FONT_SIZE}`);
     }
     
     return {

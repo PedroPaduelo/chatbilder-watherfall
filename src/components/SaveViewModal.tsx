@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Save, X, Camera, FileText } from 'lucide-react';
 import type { DataRow, ChartSettings } from '../types';
 

@@ -15,7 +15,7 @@ const WaterfallChart: React.FC<WaterfallChartProps> = ({
   onBarSelect 
 }) => {
   const [selectedBarId, setSelectedBarId] = useState<string | undefined>();
-  const { segmentData, segmentKeys } = useRechartsData(data);
+  const { segmentKeys } = useRechartsData(data);
   
   const handleBarSelect = (barId: string | undefined) => {
     setSelectedBarId(barId);
@@ -29,7 +29,6 @@ const WaterfallChart: React.FC<WaterfallChartProps> = ({
         <RechartsWaterfall 
           data={data} 
           settings={settings}
-          selectedBarId={selectedBarId}
           onBarSelect={handleBarSelect}
         />
       </div>

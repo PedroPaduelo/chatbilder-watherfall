@@ -7,7 +7,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
   LabelList
 } from 'recharts';
 import type { RechartsSegmentData, ChartSettings } from '../types';
@@ -138,7 +137,7 @@ const RechartsStackedBars: React.FC<RechartsStackedBarsProps> = ({
         />
 
         {/* Render each segment as a stacked bar */}
-        {segmentKeys.map((key, index) => (
+        {segmentKeys.map((key) => (
           <Bar
             key={key}
             dataKey={key}

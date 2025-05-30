@@ -7,8 +7,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
   LabelList,
+  Cell,
   ReferenceLine
 } from 'recharts';
 import type { DataRow, ChartSettings } from '../types';
@@ -18,7 +18,6 @@ import { formatValue } from '../utils/helpers';
 interface RechartsWaterfallProps {
   data: DataRow[];
   settings: ChartSettings;
-  selectedBarId?: string;
   onBarSelect?: (barId: string | undefined) => void;
 }
 
@@ -165,7 +164,6 @@ const ConnectorLines = ({ data, settings }: any) => {
 const RechartsWaterfall: React.FC<RechartsWaterfallProps> = ({
   data,
   settings,
-  selectedBarId,
   onBarSelect
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -207,7 +205,6 @@ const RechartsWaterfall: React.FC<RechartsWaterfallProps> = ({
       onBarSelect(data.payload.id);
     }
   };
-console.log({ chartData, settings, data });
   return (
     <div className="w-full h-full">
       <ResponsiveContainer 

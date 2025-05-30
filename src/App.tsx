@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import WaterfallChart from './components/WaterfallChart';
+import UniversalChartRenderer from './components/UniversalChartRenderer';
+import ChartTypeSelector from './components/ChartTypeSelector';
 import DataEditor from './components/DataEditor';
 import SettingsPanel from './components/SettingsPanel';
 import CSVImporter from './components/CSVImporter';
@@ -15,16 +16,19 @@ import { useFileOperations } from './hooks/useFileOperations';
 import { useNotifications } from './hooks/useNotifications';
 import { useSavedViews } from './hooks/useSavedViews';
 import { useTheme } from './hooks/useTheme';
-import type { DataRow, ChartSettings } from './types';
+import { useChartDimensions } from './hooks/useChartDimensions';
+import type { DataRow, ChartSettings, ChartType, ChartData, SankeyData } from './types';
 import { defaultSettings, initialData } from './utils/constants';
+import { getSampleDataForChartType, getSankeySampleData } from './utils/sampleData';
 
 const App = () => {
   // Core state
   const [data, setData] = useState<DataRow[]>(initialData);
   const [filteredData, setFilteredData] = useState<DataRow[]>(initialData);
+  const [sankeyData, setSankeyData] = useState<SankeyData>(getSankeySampleData());
   const [settings, setSettings] = useState<ChartSettings>(defaultSettings);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [selectedBarId, setSelectedBarId] = useState<string | undefined>();
+  const [selectedChartType, setSelectedChartType] = useState<ChartType>('waterfall');
   
   // UI state
   const [showCSVImporter, setShowCSVImporter] = useState(false);
@@ -40,6 +44,7 @@ const App = () => {
   const { notifications, notifySuccess, notifyError, removeNotification } = useNotifications();
   const { saveView } = useSavedViews();
   const { resolvedTheme } = useTheme();
+  const dimensions = useChartDimensions(filteredData, settings);
   
   const {
     handleFileUpload,
@@ -53,6 +58,16 @@ const App = () => {
     onDataChange: setData,
     chartRef
   });
+
+  // Create chart data object for UniversalChartRenderer
+  const chartData: ChartData = {
+    type: selectedChartType,
+    waterfall: filteredData,
+    sankey: sankeyData,
+    stackedBar: filteredData,
+    line: filteredData,
+    area: filteredData,
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -87,6 +102,20 @@ const App = () => {
         if (activeElement?.tagName !== 'INPUT' && activeElement?.tagName !== 'TEXTAREA') {
           e.preventDefault();
           setActiveView(prev => prev === 'chart' ? 'dashboard' : 'chart');
+        }
+      }
+
+      // Number keys 1-5 for quick chart type switching
+      if (e.key >= '1' && e.key <= '5' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const activeElement = document.activeElement;
+        if (activeElement?.tagName !== 'INPUT' && activeElement?.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          const chartTypes: ChartType[] = ['waterfall', 'sankey', 'stacked-bar', 'line', 'area'];
+          const index = parseInt(e.key) - 1;
+          if (chartTypes[index]) {
+            setSelectedChartType(chartTypes[index]);
+            notifySuccess(`Tipo de gráfico alterado`, `Alterado para ${chartTypes[index]}`);
+          }
         }
       }
     };
@@ -200,6 +229,65 @@ const App = () => {
     notifySuccess('Criando nova visualização', 'Configure seus dados e configurações, depois clique em Salvar');
   };
 
+  // Handler para mudança de tipo de gráfico (resetar dados)
+  const handleChartTypeChange = (newType: ChartType) => {
+    if (newType === 'sankey') {
+      // Para Sankey, carregar dados específicos
+      const newSankeyData = getSankeySampleData();
+      setSankeyData(newSankeyData);
+      setData([]); // Limpar dados de tabela para Sankey
+      setFilteredData([]);
+    } else {
+      // Para outros tipos, resetar dados para o padrão do novo tipo de gráfico
+      const newSampleData = getSampleDataForChartType(newType);
+      setData(newSampleData);
+      setFilteredData(newSampleData);
+    }
+    
+    setSelectedChartType(newType);
+    
+    // Limpar anotações
+    setAnnotations([]);
+    
+    // Resetar configurações para o padrão
+    setSettings(defaultSettings);
+    
+    // Notificar o usuário
+    notifySuccess(
+      `Tipo de gráfico alterado`, 
+      `Alterado para ${newType} com dados de exemplo. Use "Ver Exemplo" para entender o formato dos dados.`
+    );
+  };
+
+  // Handler para carregar dados de exemplo
+  const handleLoadSampleData = (chartType: ChartType) => {
+    if (chartType === 'sankey') {
+      // Para Sankey, usar dados específicos
+      const newSankeyData = getSankeySampleData();
+      setSankeyData(newSankeyData);
+      setData([]); // Limpar dados de tabela para Sankey
+      setFilteredData([]);
+      
+      notifySuccess(
+        'Dados de exemplo carregados', 
+        `Dados de exemplo para ${chartType} foram carregados`
+      );
+    } else {
+      const sampleData = getSampleDataForChartType(chartType);
+      setData(sampleData);
+      setFilteredData(sampleData);
+      
+      // Resetar anotações e configurações
+      setAnnotations([]);
+      setSettings(defaultSettings);
+      
+      notifySuccess(
+        'Dados de exemplo carregados', 
+        `Dados de exemplo para ${chartType} foram carregados. Examine a estrutura dos dados no editor abaixo.`
+      );
+    }
+  };
+
   return (
     <div className={`min-h-screen transition-colors duration-200 ${
       resolvedTheme === 'dark' 
@@ -212,10 +300,10 @@ const App = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-                Waterfall Chart Builder
+                Universal Chart Builder
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Create professional waterfall charts with advanced analytics
+                Create professional charts with advanced analytics - Waterfall, Sankey, Line, Area & more
               </p>
             </div>
             
@@ -251,8 +339,17 @@ const App = () => {
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Sidebar - Filters and Tools */}
+          {/* Left Sidebar - Chart Type and Filters */}
           <div className="lg:col-span-2 xl:col-span-2 space-y-6">
+            {/* Chart Type Selector */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+              <ChartTypeSelector
+                selectedType={selectedChartType}
+                onTypeChange={handleChartTypeChange}
+                onLoadSampleData={handleLoadSampleData}
+              />
+            </div>
+            
             <FilterPanel 
               data={data}
               onFilteredDataChange={setFilteredData}
@@ -262,7 +359,6 @@ const App = () => {
               data={filteredData}
               annotations={annotations}
               onAnnotationsChange={setAnnotations}
-              selectedBarId={selectedBarId}
             />
           </div>
 
@@ -278,7 +374,7 @@ const App = () => {
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-fade-in">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    Chart Preview
+                    Chart Preview - {selectedChartType.charAt(0).toUpperCase() + selectedChartType.slice(1)}
                   </h2>
                   
                   {/* Hidden file input */}
@@ -304,10 +400,12 @@ const App = () => {
                 </div>
                 
                 <div ref={chartRef} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900/50 overflow-hidden">
-                  <WaterfallChart 
-                    data={filteredData} 
+                  <UniversalChartRenderer
+                    chartType={selectedChartType}
+                    data={chartData}
                     settings={settings}
-                    onBarSelect={setSelectedBarId}
+                    dimensions={dimensions}
+                    onDataChange={setData}
                   />
                 </div>
               </div>
@@ -364,7 +462,8 @@ const App = () => {
         <div className="fixed bottom-4 left-4 z-40">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3 text-xs text-gray-600 dark:text-gray-400 opacity-75 hover:opacity-100 transition-opacity">
             <div className="font-medium mb-1">Atalhos:</div>
-            <div>Ctrl+S: Salvar | Ctrl+O: Abrir | Ctrl+I: Importar | Ctrl+E: Exportar | Tab: Alternar vista</div>
+            <div>Ctrl+S: Salvar | Ctrl+O: Abrir | Ctrl+I: Importar | Ctrl+E: Exportar</div>
+            <div>Tab: Alternar vista | 1-5: Tipos de gráfico</div>
           </div>
         </div>
       </div>

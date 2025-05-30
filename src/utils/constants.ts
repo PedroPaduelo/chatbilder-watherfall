@@ -13,6 +13,10 @@ export const defaultSettings: ChartSettings = {
   valueSuffix: '',
   showGridlines: true,
   showAxes: true, // Eixos visíveis por padrão
+  accentColor: '#3B82F6', // Cor principal para gráficos de linha e área
+  primaryColor: '#374151', // Cor primária para elementos gerais
+  backgroundColor: '#ffffff', // Cor de fundo
+  title: '', // Título opcional do gráfico
   // New label customization settings
   labelSettings: {
     categoryFontSize: 12,
@@ -23,6 +27,7 @@ export const defaultSettings: ChartSettings = {
     valueFontWeight: 'bold',
     segmentLabelFontSize: 10,
     segmentLabelFontColor: '#FFFFFF',
+    segmentLabelFontWeight: 'normal',
   },
   // Chart dimensions settings
   chartDimensions: {
@@ -112,4 +117,6 @@ export const VALIDATION = {
   MAX_BAR_SPACING: 100,
   MIN_FONT_SIZE: 8,
   MAX_FONT_SIZE: 32,
+  MIN_BORDER_RADIUS: 0,
+  MAX_BORDER_RADIUS: 20,
 } as const;

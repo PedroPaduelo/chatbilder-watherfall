@@ -13,6 +13,7 @@ import {
   Edit3
 } from 'lucide-react';
 import type { ChartSettings } from '../types';
+import { defaultSettings } from '../utils/constants';
 
 interface SettingsPanelProps {
   settings: ChartSettings;
@@ -214,6 +215,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
     }
   };
 
+  const handleResetToDefaults = () => {
+    onSettingsChange({
+      ...defaultSettings,
+      // Preserve chart dimensions if auto-resize is enabled
+      chartDimensions: settings.chartDimensions.autoResize 
+        ? settings.chartDimensions 
+        : defaultSettings.chartDimensions
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
@@ -223,46 +234,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
             <h3 className="text-lg font-semibold text-gray-800">Configurações do Gráfico</h3>
           </div>
           <button
-            onClick={() => {
-              if (confirm('Deseja restaurar todas as configurações para os valores padrão?')) {
-                onSettingsChange({
-                  barWidth: 60,
-                  barSpacing: 20,
-                  showConnectors: true,
-                  showValues: true,
-                  showCategories: true,
-                  showSegmentLabels: true,
-                  categoryLabelRotation: 0,
-                  valuePrefix: '',
-                  valueSuffix: '',
-                  showGridlines: true,
-                  showAxes: true,
-                  labelSettings: {
-                    categoryFontSize: 12,
-                    categoryFontColor: '#374151',
-                    categoryFontWeight: 'normal',
-                    valueFontSize: 14,
-                    valueFontColor: '#111827',
-                    valueFontWeight: 'bold',
-                    segmentLabelFontSize: 10,
-                    segmentLabelFontColor: '#FFFFFF',
-                  },
-                  chartDimensions: {
-                    width: 900,
-                    height: 500,
-                    autoResize: true,
-                    aspectRatio: 'auto',
-                  },
-                  colors: {
-                    baseline: '#4B5563',
-                    increase: '#10B981',
-                    decrease: '#EF4444',
-                    subtotal: '#3B82F6',
-                    total: '#6366F1'
-                  }
-                });
-              }
-            }}
+            onClick={handleResetToDefaults}
             className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1"
             title="Restaurar configurações padrão"
           >

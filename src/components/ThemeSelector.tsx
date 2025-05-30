@@ -16,7 +16,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   const themeOptions: Array<{
     value: Theme;
     label: string;
-    icon: React.ComponentType<{ size?: number; className?: string }>;
+    icon: React.ComponentType<any>; // More flexible type for Lucide icons
     description: string;
   }> = [
     {

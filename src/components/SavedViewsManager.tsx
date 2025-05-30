@@ -4,20 +4,18 @@ import {
   Search, 
   Plus, 
   Eye, 
-  Edit3, 
   Trash2, 
-  Copy, 
   Download, 
   Upload, 
   Calendar,
   FileText,
   MoreVertical,
   X,
-  Filter,
   SortAsc,
-  SortDesc
+  SortDesc,
+  Copy
 } from 'lucide-react';
-import type { SavedViewPreview, DataRow, ChartSettings } from '../types';
+import type { DataRow, ChartSettings } from '../types';
 import { useSavedViews } from '../hooks/useSavedViews';
 
 interface SavedViewsManagerProps {
@@ -44,7 +42,6 @@ const SavedViewsManager: React.FC<SavedViewsManagerProps> = ({
     exportView,
     importViews,
     clearAllViews,
-    isLoading,
     error
   } = useSavedViews();
 
@@ -80,11 +77,13 @@ const SavedViewsManager: React.FC<SavedViewsManagerProps> = ({
       }
     });
 
-  const handleLoadView = async (id: string) => {
+  const handleLoadView = async (viewId: string) => {
     try {
-      const view = await loadView(id);
+      const view = await loadView(viewId);
       if (view) {
-        onLoadView(view.data, view.settings);
+        // Extract waterfall data from ChartData
+        const viewData = view.data.waterfall || [];
+        onLoadView(viewData, view.settings);
         onClose();
       }
     } catch (error) {

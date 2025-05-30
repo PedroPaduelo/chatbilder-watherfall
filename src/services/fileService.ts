@@ -73,8 +73,10 @@ export class FileService {
    * Validate if file type is supported
    */
   static isSupportedFileType(filename: string): boolean {
-    const extension = this.getFileExtension(filename);
-    return UI_CONSTANTS.FILES.SUPPORTED_EXTENSIONS.includes(extension);
+    const extension = filename.split('.').pop()?.toLowerCase();
+    if (!extension) return false;
+    
+    return UI_CONSTANTS.FILES.SUPPORTED_EXTENSIONS.includes(extension as 'csv' | 'xlsx' | 'xls');
   }
 
   /**

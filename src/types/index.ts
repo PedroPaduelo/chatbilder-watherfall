@@ -62,6 +62,10 @@ export interface ChartSettings {
   valueSuffix: string;
   showGridlines: boolean;
   showAxes: boolean; // Nova opção para mostrar/ocultar eixos
+  accentColor: string; // Cor principal para gráficos de linha e área
+  primaryColor: string; // Cor primária para elementos gerais
+  backgroundColor: string; // Cor de fundo
+  title?: string; // Título opcional do gráfico
   // New label customization settings
   labelSettings: {
     categoryFontSize: number;
@@ -72,6 +76,7 @@ export interface ChartSettings {
     valueFontWeight: 'normal' | 'bold' | 'bolder';
     segmentLabelFontSize: number;
     segmentLabelFontColor: string;
+    segmentLabelFontWeight?: 'normal' | 'bold' | 'bolder';
   };
   // Chart dimensions settings
   chartDimensions: {
@@ -100,22 +105,74 @@ export interface ChartDimensions {
   };
 }
 
+// Chart Types
+export type ChartType = 'waterfall' | 'sankey' | 'stacked-bar' | 'line' | 'area';
+
+export interface ChartTypeConfig {
+  id: ChartType;
+  name: string;
+  description: string;
+  icon: string;
+  supportedFeatures: {
+    stackedSegments: boolean;
+    connectors: boolean;
+    values: boolean;
+    categories: boolean;
+    gridlines: boolean;
+    axes: boolean;
+    colors: boolean;
+    annotations: boolean;
+  };
+}
+
+// Sankey specific types
+export interface SankeyNode {
+  id: string;
+  name: string;
+  color?: string;
+  level?: number;
+}
+
+export interface SankeyLink {
+  source: string;
+  target: string;
+  value: number;
+  color?: string;
+}
+
+export interface SankeyData {
+  nodes: SankeyNode[];
+  links: SankeyLink[];
+}
+
+// Generic chart data interface
+export interface ChartData {
+  type: ChartType;
+  waterfall?: DataRow[];
+  sankey?: SankeyData;
+  stackedBar?: DataRow[];
+  line?: DataRow[];
+  area?: DataRow[];
+}
+
 // Saved View System Types
 export interface SavedView {
   id: string;
   name: string;
   description?: string;
-  data: DataRow[];
+  data: ChartData;
   settings: ChartSettings;
+  chartType: ChartType;
   createdAt: Date;
   updatedAt: Date;
-  thumbnail?: string; // Base64 da miniatura
+  thumbnail?: string;
 }
 
 export interface SavedViewPreview {
   id: string;
   name: string;
   description?: string;
+  chartType: ChartType;
   createdAt: Date;
   updatedAt: Date;
   dataCount: number;

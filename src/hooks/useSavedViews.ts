@@ -36,10 +36,11 @@ export const useSavedViews = (): UseSavedViewsReturn => {
           id: view.id,
           name: view.name,
           description: view.description,
-          createdAt: new Date(view.createdAt),
-          updatedAt: new Date(view.updatedAt),
-          dataCount: view.data.length,
-          thumbnail: view.thumbnail
+          chartType: view.chartType || 'waterfall', // Default to waterfall if not specified
+          createdAt: view.createdAt,
+          updatedAt: view.updatedAt,
+          dataCount: view.data.waterfall?.length || 0, // Get waterfall data count
+          thumbnail: view.thumbnail,
         }));
         setSavedViews(previews.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()));
       }
@@ -67,8 +68,12 @@ export const useSavedViews = (): UseSavedViewsReturn => {
         id: crypto.randomUUID(),
         name: name.trim(),
         description: description.trim(),
-        data: JSON.parse(JSON.stringify(data)), // Deep clone
+        data: {
+          type: 'waterfall',
+          waterfall: JSON.parse(JSON.stringify(data)) // Deep clone
+        },
         settings: JSON.parse(JSON.stringify(settings)), // Deep clone
+        chartType: 'waterfall',
         createdAt: new Date(),
         updatedAt: new Date(),
         thumbnail
@@ -185,7 +190,7 @@ export const useSavedViews = (): UseSavedViewsReturn => {
       const view = await loadView(id);
       if (!view) throw new Error('View not found');
 
-      await saveView(newName, view.description || '', view.data, view.settings, view.thumbnail);
+      await saveView(newName, view.description || '', view.data.waterfall || [], view.settings, view.thumbnail);
     } catch (error) {
       console.error('Error duplicating view:', error);
       setError('Failed to duplicate view');
