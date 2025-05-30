@@ -34,6 +34,7 @@ const App = () => {
   const [showCSVImporter, setShowCSVImporter] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showViewsManager, setShowViewsManager] = useState(false);
+  const [showChartSettings, setShowChartSettings] = useState(false);
   const [activeView, setActiveView] = useState<'chart' | 'dashboard'>('chart');
   
   // Refs
@@ -362,8 +363,8 @@ const App = () => {
             />
           </div>
 
-          {/* Main Content Area - Chart/Dashboard */}
-          <div className="lg:col-span-8 xl:col-span-8 space-y-6">
+          {/* Main Content Area - Chart/Dashboard (expande para ocupar o espaço do painel removido) */}
+          <div className="lg:col-span-10 xl:col-span-10 space-y-6">
             {activeView === 'dashboard' ? (
               <MetricsDashboard 
                 data={filteredData} 
@@ -388,6 +389,7 @@ const App = () => {
                   
                   {/* Toolbar */}
                   <Toolbar
+                    chartType={selectedChartType}
                     onImportCSV={() => setShowCSVImporter(true)}
                     onFileUpload={() => fileInputRef.current?.click()}
                     onExportPNG={handleExportPNG}
@@ -396,6 +398,7 @@ const App = () => {
                     onExportHTML={handleExportHTML}
                     onSaveView={() => setShowSaveModal(true)}
                     onManageViews={() => setShowViewsManager(true)}
+                    onShowChartSettings={() => setShowChartSettings(true)}
                   />
                 </div>
                 
@@ -406,16 +409,16 @@ const App = () => {
                     settings={settings}
                     dimensions={dimensions}
                     onDataChange={setData}
+                    onSettingsChange={setSettings}
+                    isConfigModalOpen={showChartSettings}
+                    onConfigModalClose={() => setShowChartSettings(false)}
                   />
                 </div>
               </div>
             )}
           </div>
 
-          {/* Right Sidebar - Settings */}
-          <div className="lg:col-span-2 xl:col-span-2">
-            <SettingsPanel settings={settings} onSettingsChange={setSettings} />
-          </div>
+          {/* Removido painel lateral de configurações */}
         </div>
 
         {/* Data Editor - Full Width */}

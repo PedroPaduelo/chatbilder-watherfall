@@ -329,11 +329,6 @@ const useApiData = (endpoint: string) => {
 
 ## 📋 Roadmap e Próximas Funcionalidades
 
-### **🔄 Em Desenvolvimento**
-- [ ] **Animações Avançadas**: Transições suaves entre estados
-- [ ] **Gráficos 3D**: Visualizações tridimensionais
-- [ ] **Colaboração em Tempo Real**: Edição simultânea
-- [ ] **Templates Profissionais**: Layouts pré-configurados
 
 ### **🎯 Planejado**
 - [ ] **API REST**: Integração com sistemas externos

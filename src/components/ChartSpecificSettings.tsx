@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X, RotateCcw, Download, Upload, Info, Lightbulb } from 'lucide-react';
 import type { ChartType, ChartSettings } from '../types';
 import { ChartSettingsManager } from '../services/chartSettingsService';
+import SankeyChartConfig from './SankeyChartConfig';
+import { defaultSankeySettings } from '../utils/constants';
 
 interface ChartSpecificSettingsProps {
   chartType: ChartType;

@@ -1,4 +1,4 @@
-import type { ChartSettings, DataRow } from '../types';
+import type { ChartSettings, DataRow, SankeySettings } from '../types';
 
 // Default settings
 export const defaultSettings: ChartSettings = {
@@ -120,3 +120,46 @@ export const VALIDATION = {
   MIN_BORDER_RADIUS: 0,
   MAX_BORDER_RADIUS: 20,
 } as const;
+
+// Default Sankey-specific settings
+export const defaultSankeySettings: SankeySettings = {
+  // Node settings
+  nodeWidth: 15,
+  nodeMinHeight: 15,
+  nodeSpacing: 30,
+  nodeBorderRadius: 2,
+  nodeOpacity: 0.9,
+  
+  // Link settings
+  linkOpacity: 0.5,
+  linkCurvature: 0.5,
+  linkGradient: true,
+  linkHoverOpacity: 0.8,
+  
+  // Layout settings
+  iterations: 5,
+  spacingRatio: 0.7,
+  minSpacing: 30,
+  compressionThreshold: 0.9,
+  
+  // Visual settings
+  showNodeLabels: true,
+  showNodeValues: true,
+  showTooltips: true,
+  animationDuration: 300,
+  
+  // Color settings
+  colorScheme: 'default',
+  customColors: [
+    '#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444',
+    '#6366F1', '#EC4899', '#14B8A6', '#F97316', '#84CC16'
+  ],
+  linkColorMode: 'gradient',
+  
+  // Typography
+  labelFontSize: 11,
+  labelFontWeight: 'normal',
+  labelColor: '#374151',
+  valueFontSize: 9,
+  valueColor: '#FFFFFF',
+};

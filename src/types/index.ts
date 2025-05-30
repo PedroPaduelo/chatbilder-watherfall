@@ -92,6 +92,8 @@ export interface ChartSettings {
     subtotal: string;
     total: string;
   };
+  // Configurações específicas do Sankey (opcionais)
+  sankeySettings?: SankeySettings;
 }
 
 export interface ChartDimensions {
@@ -143,6 +145,46 @@ export interface SankeyLink {
 export interface SankeyData {
   nodes: SankeyNode[];
   links: SankeyLink[];
+}
+
+// Sankey-specific configuration settings
+export interface SankeySettings {
+  // Node settings
+  nodeWidth: number;
+  nodeMinHeight: number;
+  nodeSpacing: number;
+  nodeBorderRadius: number;
+  nodeOpacity: number;
+  
+  // Link settings
+  linkOpacity: number;
+  linkCurvature: number;
+  linkGradient: boolean;
+  linkHoverOpacity: number;
+  
+  // Layout settings
+  iterations: number;
+  spacingRatio: number;
+  minSpacing: number;
+  compressionThreshold: number;
+  
+  // Visual settings
+  showNodeLabels: boolean;
+  showNodeValues: boolean;
+  showTooltips: boolean;
+  animationDuration: number;
+  
+  // Color settings
+  colorScheme: 'default' | 'categorical' | 'gradient' | 'custom';
+  customColors: string[];
+  linkColorMode: 'source' | 'target' | 'gradient' | 'custom';
+  
+  // Typography
+  labelFontSize: number;
+  labelFontWeight: 'normal' | 'bold' | 'bolder';
+  labelColor: string;
+  valueFontSize: number;
+  valueColor: string;
 }
 
 // Generic chart data interface

@@ -107,17 +107,17 @@ export const chartTypeDefaultSettings: ChartTypeSettings = {
   },
   
   sankey: {
-    barWidth: 30, // Node width
-    barSpacing: 50, // Node spacing
-    showConnectors: false,
+    barWidth: 20, // Node width
+    barSpacing: 40, // Node spacing
+    showConnectors: false, // Não aplicável ao Sankey
     showValues: true,
-    showCategories: false,
-    showSegmentLabels: false,
+    showCategories: false, // Não aplicável ao Sankey
+    showSegmentLabels: false, // Não aplicável ao Sankey
     categoryLabelRotation: 0,
     valuePrefix: '',
     valueSuffix: '',
-    showGridlines: false,
-    showAxes: false,
+    showGridlines: false, // Não necessário para Sankey
+    showAxes: false, // Não aplicável ao Sankey
     accentColor: '#6366F1',
     primaryColor: '#374151',
     backgroundColor: '#ffffff',
@@ -128,6 +128,34 @@ export const chartTypeDefaultSettings: ChartTypeSettings = {
       decrease: '#EF4444',
       subtotal: '#8B5CF6',
       total: '#1F2937'
+    },
+    // Configurações específicas do Sankey
+    sankeySettings: {
+      nodeWidth: 20,
+      nodeMinHeight: 30,
+      nodeSpacing: 40,
+      nodeBorderRadius: 4,
+      nodeOpacity: 1,
+      linkOpacity: 0.7,
+      linkCurvature: 0.5,
+      linkGradient: true,
+      linkHoverOpacity: 0.9,
+      iterations: 6,
+      spacingRatio: 0.8,
+      minSpacing: 20,
+      compressionThreshold: 0.9,
+      showNodeLabels: true,
+      showNodeValues: true,
+      showTooltips: true,
+      animationDuration: 300,
+      colorScheme: 'default',
+      customColors: ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'],
+      linkColorMode: 'gradient',
+      labelFontSize: 12,
+      labelFontWeight: 'bold',
+      labelColor: '#374151',
+      valueFontSize: 10,
+      valueColor: '#6B7280'
     }
   }
 };

@@ -1,11 +1,12 @@
 import type React from 'react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ChartType, ChartData, ChartSettings, ChartDimensions } from '../types';
 import WaterfallChart from './WaterfallChart';
 import SankeyChart from './SankeyChart';
 import StackedBarChart from './StackedBarChart';
 import LineChart from './LineChart';
 import AreaChart from './AreaChart';
+import ConfigModal from './ConfigModal';
 
 interface UniversalChartRendererProps {
   chartType: ChartType;
@@ -13,6 +14,9 @@ interface UniversalChartRendererProps {
   settings: ChartSettings;
   dimensions: ChartDimensions;
   onDataChange?: (data: any) => void;
+  onSettingsChange?: (settings: ChartSettings) => void;
+  isConfigModalOpen?: boolean;
+  onConfigModalClose?: () => void;
 }
 
 const UniversalChartRenderer: React.FC<UniversalChartRendererProps> = ({
@@ -21,7 +25,33 @@ const UniversalChartRenderer: React.FC<UniversalChartRendererProps> = ({
   settings,
   dimensions,
   onDataChange,
+  onSettingsChange,
+  isConfigModalOpen = false,
+  onConfigModalClose,
 }) => {
+  // Estado para controlar a abertura do modal de configurações
+  const [configModalOpen, setConfigModalOpen] = useState(isConfigModalOpen);
+  
+  // Atualiza o estado local quando a prop externa muda
+  useEffect(() => {
+    if (isConfigModalOpen !== undefined) {
+      setConfigModalOpen(isConfigModalOpen);
+    }
+  }, [isConfigModalOpen]);
+
+  // Função para lidar com mudanças nas configurações
+  const handleSettingsChange = (newSettings: ChartSettings) => {
+    if (onSettingsChange) {
+      onSettingsChange(newSettings);
+    }
+  };
+
+  // Função de debug para abrir o modal
+  const handleOpenConfigModal = () => {
+    console.log("Abrindo o modal de configurações");
+    setConfigModalOpen(true);
+  };
+
   // Get the appropriate data for the current chart type
   const chartData = useMemo(() => {
     switch (chartType) {
@@ -108,7 +138,19 @@ const UniversalChartRenderer: React.FC<UniversalChartRendererProps> = ({
   };
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
+      {/* Modal de configurações */}
+      <ConfigModal
+        isOpen={configModalOpen}
+        onClose={() => {
+          setConfigModalOpen(false);
+          if (onConfigModalClose) onConfigModalClose();
+        }}
+        settings={settings}
+        onSettingsChange={handleSettingsChange}
+      />
+      
+      {/* Renderização do gráfico */}
       {renderChart()}
     </div>
   );

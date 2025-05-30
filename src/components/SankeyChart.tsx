@@ -195,191 +195,222 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
 
     // Calcular escala de altura
     const totalValue = Math.max(...nodes.map(n => n.value));
-    const heightScale = (chartHeight * 0.7) / totalValue; // Reduzir para dar mais espaço
+    const heightScale = chartHeight / (totalValue * 1.2); // Ajustado para usar mais do espaço vertical
 
     // Calcular alturas dos nós
     nodes.forEach(node => {
       node.height = Math.max(12, node.value * heightScale); // Altura mínima maior
     });
 
-    // Posicionar nós horizontalmente
-    const levelWidth = Math.max(80, chartWidth / (nodesByLevel.length)); // Largura mínima ajustada
+    // Posicionar nós horizontalmente - espaçamento uniforme
+    const levelWidth = chartWidth / (maxLevel + 1);
     nodesByLevel.forEach((levelNodes, level) => {
-      const x = level * levelWidth + levelWidth / 2 - 7.5;
+      const x = level * levelWidth;
       levelNodes.forEach(node => {
         node.x = x;
       });
     });
 
-    // Nova lógica de posicionamento vertical para ocupar toda a altura
-    const positionVertically = () => {
+    // NOVO ALGORITMO DE POSICIONAMENTO VERTICAL COM MAIS ESPAÇAMENTO
+    // Distribuir nós verticalmente - ocupando o espaço total disponível com maior espaçamento
+    const positionNodesVertically = () => {
       nodesByLevel.forEach(levelNodes => {
-        // Ordenar nós por valor para estabilidade
-        levelNodes.sort((a, b) => b.value - a.value || a.index - b.index);
+        // Ordenar nós por valor para garantir consistência na visualização
+        levelNodes.sort((a, b) => b.value - a.value);
+        
+        // Calcular espaço total necessário
         const totalNodeHeight = levelNodes.reduce((sum, node) => sum + node.height, 0);
-        const n = levelNodes.length;
-        let spacing = 0;
-        if (n > 1) {
-          spacing = (chartHeight - totalNodeHeight) / (n - 1);
-        } else {
-          // Se só tem um nó, centraliza
-          spacing = 0;
-        }
+        
+        // Aumentar significativamente o espaçamento
+        // Usar 70% da altura disponível para espaçamento
+        const spacingRatio = 0.7;
+        const totalSpacingNeeded = chartHeight * spacingRatio;
+        const spacingPerNode = levelNodes.length > 1 ? totalSpacingNeeded / (levelNodes.length - 1) : 0;
+        
+        // Calcular altura ajustada para os nós
+        const nodeHeightRatio = 1 - spacingRatio;
+        const nodeScale = nodeHeightRatio * chartHeight / totalNodeHeight;
+        
+        // Aplicar escala aos nós
+        levelNodes.forEach(node => {
+          node.height = Math.max(15, node.height * nodeScale); // Altura mínima aumentada
+        });
+        
+        // Distribuir nós com espaçamento amplo
         let currentY = 0;
         levelNodes.forEach((node, i) => {
-          // Se só tem um nó, centraliza
-          if (n === 1) {
-            node.y = (chartHeight - node.height) / 2;
-          } else {
-            node.y = currentY;
-            currentY += node.height + spacing;
-          }
+          node.y = currentY;
+          currentY += node.height + (i < levelNodes.length - 1 ? spacingPerNode : 0);
         });
       });
+    };
+    
+    positionNodesVertically();
 
-      // Otimização iterativa para resolver sobreposições
-      const maxIterations = 20;
-      const alpha = 0.5; // Fator de amortecimento ajustado para convergência mais suave
-
-      for (let iteration = 0; iteration < maxIterations; iteration++) {
-        let totalMovement = 0;
-
-        // Ajustar baseado nos targets (esquerda para direita)
-        for (let level = 0; level < nodesByLevel.length - 1; level++) {
+    // Otimizar posições para minimizar cruzamentos de links, mas manter espaçamento
+    const optimizeNodePositions = () => {
+      // Reduzir número de iterações para evitar comprimir demais o espaçamento
+      const iterations = 5;
+      // Reduzir a força de ajuste para preservar espaçamento
+      const damping = 0.15;
+      
+      for (let i = 0; i < iterations; i++) {
+        // Ajustar nós com base nas posições dos nós conectados
+        for (let level = 0; level <= maxLevel; level++) {
           nodesByLevel[level].forEach(node => {
-            if (node.sourceLinks.length > 0) {
-              const weightedY = node.sourceLinks.reduce((sum, link) => {
-                return sum + (link.targetNode.y + link.targetNode.height / 2) * link.value;
-              }, 0);
-              const totalWeight = node.sourceLinks.reduce((sum, link) => sum + link.value, 0);
-
-              if (totalWeight > 0) {
-                const idealY = weightedY / totalWeight - node.height / 2;
-                const oldY = node.y;
-                node.y = node.y + (idealY - node.y) * alpha;
-                totalMovement += Math.abs(node.y - oldY);
-              }
+            let idealY = 0;
+            let totalWeight = 0;
+            
+            // Considerar links de entrada
+            node.targetLinks.forEach(link => {
+              const sourceY = link.sourceNode.y + link.sourceNode.height / 2;
+              idealY += sourceY * link.value;
+              totalWeight += link.value;
+            });
+            
+            // Considerar links de saída
+            node.sourceLinks.forEach(link => {
+              const targetY = link.targetNode.y + link.targetNode.height / 2;
+              idealY += targetY * link.value;
+              totalWeight += link.value;
+            });
+            
+            if (totalWeight > 0) {
+              // Calcular posição central ideal e ajustar suavemente
+              idealY = idealY / totalWeight - node.height / 2;
+              // Usar damping menor para preservar mais do espaçamento original
+              node.y = node.y * (1 - damping) + idealY * damping;
             }
           });
         }
-
-        // Ajustar baseado nos sources (direita para esquerda)
-        for (let level = nodesByLevel.length - 1; level > 0; level--) {
-          nodesByLevel[level].forEach(node => {
-            if (node.targetLinks.length > 0) {
-              const weightedY = node.targetLinks.reduce((sum, link) => {
-                return sum + (link.sourceNode.y + link.sourceNode.height / 2) * link.value;
-              }, 0);
-              const totalWeight = node.targetLinks.reduce((sum, link) => sum + link.value, 0);
-
-              if (totalWeight > 0) {
-                const idealY = weightedY / totalWeight - node.height / 2;
-                const oldY = node.y;
-                node.y = node.y + (idealY - node.y) * alpha;
-                totalMovement += Math.abs(node.y - oldY);
-              }
-            }
-          });
-        }
-
-        // Resolver sobreposições
-        nodesByLevel.forEach(levelNodes => {
-          levelNodes.sort((a, b) => a.y - b.y);
-
-          const minGap = 12; // Espaçamento mínimo ajustado
-          for (let i = 1; i < levelNodes.length; i++) {
-            const current = levelNodes[i];
-            const previous = levelNodes[i - 1];
-            const requiredY = previous.y + previous.height + minGap;
-
-            if (current.y < requiredY) {
-              current.y = requiredY;
-            }
-          }
-        });
-
-        // Garantir limites
-        nodes.forEach(node => {
-          node.y = Math.max(5, Math.min(chartHeight - node.height - 5, node.y));
-        });
-
-        // Parar se o movimento for mínimo
-        if (totalMovement < 1) {
-          break;
-        }
+        
+        // Preservar espaçamento após cada iteração
+        preserveSpacing();
       }
     };
-
-    positionVertically();
-
-    // Calcular posições dos links com melhor alinhamento
-    const calculateLinkPositions = () => {
-      // Ordenar links para minimizar cruzamentos
-      nodes.forEach(node => {
-        node.sourceLinks.sort((a, b) => (a.targetNode.y + a.targetNode.height / 2) - (b.targetNode.y + b.targetNode.height / 2));
-        node.targetLinks.sort((a, b) => (a.sourceNode.y + a.sourceNode.height / 2) - (b.sourceNode.y + b.sourceNode.height / 2));
-      });
-
-      // Calcular posições Y dos links nos nós source com melhor distribuição
-      nodes.forEach(node => {
-        if (node.sourceLinks.length === 0) return;
+    
+    const preserveSpacing = () => {
+      nodesByLevel.forEach(levelNodes => {
+        // Ordenar por posição Y
+        levelNodes.sort((a, b) => a.y - b.y);
         
-        const totalLinkWidth = node.sourceLinks.reduce((sum, link) => sum + link.value * heightScale, 0);
-        const availableHeight = node.height;
-        const padding = Math.max(1, (availableHeight - totalLinkWidth) / 2);
+        // Garantir espaçamento mínimo generoso
+        const minSpacing = Math.max(30, chartHeight * 0.15); // Espaçamento mínimo aumentado
         
-        let sy = node.y + padding;
-        node.sourceLinks.forEach(link => {
-          link.sy0 = sy;
-          link.width = Math.max(1, link.value * heightScale);
-          link.sy1 = sy + link.width;
-          sy = link.sy1;
-        });
-      });
-
-      // Calcular posições Y dos links nos nós target com melhor distribuição
-      nodes.forEach(node => {
-        if (node.targetLinks.length === 0) return;
+        for (let i = 1; i < levelNodes.length; i++) {
+          const current = levelNodes[i];
+          const previous = levelNodes[i - 1];
+          const minY = previous.y + previous.height + minSpacing;
+          
+          if (current.y < minY) {
+            current.y = minY;
+          }
+        }
         
-        const totalLinkWidth = node.targetLinks.reduce((sum, link) => sum + link.value * heightScale, 0);
-        const availableHeight = node.height;
-        const padding = Math.max(1, (availableHeight - totalLinkWidth) / 2);
-        
-        let ty = node.y + padding;
-        node.targetLinks.forEach(link => {
-          link.ty0 = ty;
-          link.ty1 = ty + link.width;
-          ty = link.ty1;
-        });
+        // Ajustar para caber dentro dos limites
+        fitNodesToChart(levelNodes);
       });
     };
-
+    
+    const fitNodesToChart = (nodes: ProcessedNode[]) => {
+      if (nodes.length <= 1) return;
+      
+      const firstNode = nodes[0];
+      const lastNode = nodes[nodes.length - 1];
+      const totalHeight = lastNode.y + lastNode.height - firstNode.y;
+      
+      if (totalHeight > chartHeight) {
+        // Comprimir proporcionalmente
+        const compressionFactor = chartHeight / totalHeight;
+        const baseY = firstNode.y;
+        
+        nodes.forEach((node, i) => {
+          if (i === 0) return; // Manter o primeiro nó na posição
+          node.y = baseY + (node.y - baseY) * compressionFactor;
+        });
+      } else if (totalHeight < chartHeight * 0.9) {
+        // Esticar proporcionalmente se estiver usando menos de 90% do espaço
+        const stretchFactor = chartHeight * 0.9 / totalHeight;
+        const baseY = firstNode.y;
+        
+        nodes.forEach((node, i) => {
+          if (i === 0) return; // Manter o primeiro nó na posição
+          node.y = baseY + (node.y - baseY) * stretchFactor;
+        });
+      }
+    };
+    
+    // Aplicar otimização com preservação de espaçamento
+    optimizeNodePositions();
+    
+    // Calcular posições e dimensões dos links
+    const calculateLinkPositions = () => {
+      // Para cada nó, calcular as posições dos links de saída e entrada
+      nodes.forEach(node => {
+        // Ordenar links para minimizar cruzamentos
+        node.sourceLinks.sort((a, b) => 
+          a.targetNode.y + a.targetNode.height / 2 - (b.targetNode.y + b.targetNode.height / 2)
+        );
+        
+        node.targetLinks.sort((a, b) => 
+          a.sourceNode.y + a.sourceNode.height / 2 - (b.sourceNode.y + b.sourceNode.height / 2)
+        );
+        
+        // Calcular larguras dos links de saída
+        if (node.sourceLinks.length > 0) {
+          const totalValue = node.sourceLinks.reduce((sum, link) => sum + link.value, 0);
+          const linkScale = node.height / totalValue;
+          
+          let y = node.y;
+          node.sourceLinks.forEach(link => {
+            const linkHeight = link.value * linkScale;
+            link.width = linkHeight;
+            link.sy0 = y;
+            link.sy1 = y + linkHeight;
+            y += linkHeight;
+          });
+        }
+        
+        // Calcular larguras dos links de entrada
+        if (node.targetLinks.length > 0) {
+          const totalValue = node.targetLinks.reduce((sum, link) => sum + link.value, 0);
+          const linkScale = node.height / totalValue;
+          
+          let y = node.y;
+          node.targetLinks.forEach(link => {
+            const linkHeight = link.value * linkScale;
+            link.width = linkHeight;
+            link.ty0 = y;
+            link.ty1 = y + linkHeight;
+            y += linkHeight;
+          });
+        }
+      });
+    };
+    
     calculateLinkPositions();
-
-    // Gerar caminhos dos links com curvas melhoradas
+    
+    // Gerar caminhos para os links usando curvas de Bézier
     links.forEach(link => {
       const x0 = link.sourceNode.x + link.sourceNode.width;
       const x1 = link.targetNode.x;
-      const sy0 = link.sy0;
-      const sy1 = link.sy1;
-      const ty0 = link.ty0;
-      const ty1 = link.ty1;
+      const y0 = (link.sy0 + link.sy1) / 2;
+      const y1 = (link.ty0 + link.ty1) / 2;
       
-      // Calcular curvatura adaptativa baseada na distância
-      const distance = x1 - x0;
-      const curvature = Math.min(0.6, Math.max(0.3, distance / 200));
-      const xi = distance * curvature;
+      // Calcular pontos de controle para curvas suaves
+      const curvature = 0.5;
+      const dx = Math.abs(x1 - x0) * curvature;
       
-      // Usar curvas cúbicas de Bézier mais suaves
+      // Usar curvas de Bézier para criar caminhos suaves
       link.path = `
-        M${x0},${sy0}
-        C${x0 + xi},${sy0} ${x1 - xi},${ty0} ${x1},${ty0}
-        L${x1},${ty1}
-        C${x1 - xi},${ty1} ${x0 + xi},${sy1} ${x0},${sy1}
+        M ${x0} ${link.sy0}
+        C ${x0 + dx} ${link.sy0}, ${x1 - dx} ${link.ty0}, ${x1} ${link.ty0}
+        L ${x1} ${link.ty1}
+        C ${x1 - dx} ${link.ty1}, ${x0 + dx} ${link.sy1}, ${x0} ${link.sy1}
         Z
-      `.replace(/\s+/g, ' ').trim();
+      `;
     });
-
+    
     return { nodes, links };
   }, [data, chartWidth, chartHeight]);
 
