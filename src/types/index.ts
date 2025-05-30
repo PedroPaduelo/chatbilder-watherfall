@@ -98,3 +98,25 @@ export interface ChartDimensions {
     left: number;
   };
 }
+
+// Saved View System Types
+export interface SavedView {
+  id: string;
+  name: string;
+  description?: string;
+  data: DataRow[];
+  settings: ChartSettings;
+  createdAt: Date;
+  updatedAt: Date;
+  thumbnail?: string; // Base64 da miniatura
+}
+
+export interface SavedViewPreview {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  dataCount: number;
+  thumbnail?: string;
+}
