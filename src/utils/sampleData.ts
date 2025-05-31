@@ -1,64 +1,8 @@
 import type { DataRow, ChartType, SankeyData } from '../types';
+import { generateSampleWaterfallData } from '../components/waterfall';
 
-// Dados de exemplo para Waterfall Chart
-export const waterfallSampleData: DataRow[] = [
-  {
-    id: '1',
-    category: 'Receita Inicial',
-    value: 100000,
-    type: 'baseline',
-    color: '#3b82f6',
-    isSubtotal: false
-  },
-  {
-    id: '2',
-    category: 'Vendas Online',
-    value: 25000,
-    type: 'increase',
-    color: '#10b981',
-    isSubtotal: false
-  },
-  {
-    id: '3',
-    category: 'Vendas Físicas',
-    value: 15000,
-    type: 'increase',
-    color: '#10b981',
-    isSubtotal: false
-  },
-  {
-    id: '4',
-    category: 'Subtotal Vendas',
-    value: 140000,
-    type: 'subtotal',
-    color: '#8b5cf6',
-    isSubtotal: true
-  },
-  {
-    id: '5',
-    category: 'Custos Operacionais',
-    value: -20000,
-    type: 'decrease',
-    color: '#ef4444',
-    isSubtotal: false
-  },
-  {
-    id: '6',
-    category: 'Marketing',
-    value: -8000,
-    type: 'decrease',
-    color: '#ef4444',
-    isSubtotal: false
-  },
-  {
-    id: '7',
-    category: 'Total Final',
-    value: 112000,
-    type: 'total',
-    color: '#1f2937',
-    isSubtotal: false
-  }
-];
+// Dados de exemplo para Waterfall Chart - usando gerador modular
+export const waterfallSampleData: DataRow[] = generateSampleWaterfallData();
 
 // Dados de exemplo para Stacked Bar Chart
 export const stackedBarSampleData: DataRow[] = [

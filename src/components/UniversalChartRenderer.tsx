@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import type { ChartType, ChartData, ChartSettings, ChartDimensions, DataRow } from '../types';
-import WaterfallChart from './WaterfallChart';
+import { WaterfallChart } from './waterfall';
 import SankeyChart from './SankeyChart';
 import StackedBarChart from './StackedBarChart';
 import LineChart from './LineChart';

@@ -1,21 +1,16 @@
 import React, { useState } from 'react';
-import type { DataRow, ChartSettings } from '../types';
-import RechartsWaterfall from './RechartsWaterfall';
-import { useRechartsData } from '../hooks/useRechartsData';
+import { RechartsWaterfall } from './core/RechartsWaterfall';
+import { useWaterfallData } from './hooks/useWaterfallData';
+import type { WaterfallChartProps } from './types';
 
-interface WaterfallChartProps {
-  data: DataRow[];
-  settings: ChartSettings;
-  onBarSelect?: (barId: string | undefined) => void;
-}
-
-const WaterfallChart: React.FC<WaterfallChartProps> = ({ 
+export const WaterfallChart: React.FC<WaterfallChartProps> = ({ 
   data, 
   settings, 
-  onBarSelect 
+  onBarSelect,
+  onDataChange
 }) => {
   const [selectedBarId, setSelectedBarId] = useState<string | undefined>();
-  const { segmentKeys } = useRechartsData(data);
+  const { segmentKeys, totalValue, hasBaseline, hasTotal } = useWaterfallData(data);
   
   const handleBarSelect = (barId: string | undefined) => {
     setSelectedBarId(barId);
@@ -30,12 +25,13 @@ const WaterfallChart: React.FC<WaterfallChartProps> = ({
           data={data} 
           settings={settings}
           onBarSelect={handleBarSelect}
+          onDataChange={onDataChange}
         />
       </div>
 
       {/* Chart Info */}
       <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
             <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">Dados</h4>
             <p className="text-blue-700 dark:text-blue-300">
@@ -53,11 +49,20 @@ const WaterfallChart: React.FC<WaterfallChartProps> = ({
           )}
           
           <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
-            <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-1">Visualização</h4>
+            <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-1">Estrutura</h4>
             <p className="text-purple-700 dark:text-purple-300">
-              Waterfall Chart
+              {hasBaseline ? '✓' : '✗'} Baseline {hasTotal ? '✓' : '✗'} Total
             </p>
           </div>
+
+          {totalValue !== 0 && (
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3 border border-indigo-200 dark:border-indigo-800">
+              <h4 className="font-medium text-indigo-900 dark:text-indigo-100 mb-1">Total Final</h4>
+              <p className="text-indigo-700 dark:text-indigo-300 font-mono">
+                {settings.valuePrefix}{totalValue.toLocaleString('pt-BR')}{settings.valueSuffix}
+              </p>
+            </div>
+          )}
         </div>
         
         {selectedBarId && (
@@ -72,5 +77,3 @@ const WaterfallChart: React.FC<WaterfallChartProps> = ({
     </div>
   );
 };
-
-export default WaterfallChart;
