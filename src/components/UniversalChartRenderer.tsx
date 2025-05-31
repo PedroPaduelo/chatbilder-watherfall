@@ -2,7 +2,7 @@ import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import type { ChartType, ChartData, ChartSettings, ChartDimensions, DataRow } from '../types';
 import { WaterfallChart } from './waterfall';
-import SankeyChart from './SankeyChart';
+import SankeyChart from './sankey/core/SankeyChart';
 import StackedBarChart from './StackedBarChart';
 import LineChart from './LineChart';
 import AreaChart from './AreaChart';
@@ -85,8 +85,10 @@ const UniversalChartRenderer: React.FC<UniversalChartRendererProps> = ({
       case 'sankey':
         return (
           <SankeyChart
-            {...commonProps}
             data={chartData as any}
+            settings={settings.sankeySettings || settings as any}
+            width={dimensions.width}
+            height={dimensions.height}
           />
         );
       

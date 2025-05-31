@@ -2,11 +2,50 @@ import type { SankeySettings, SankeyData, ProcessedSankeyNode, ProcessedSankeyLi
 
 // Configurações padrão do Sankey
 export const defaultSankeySettings: SankeySettings = {
+  // Base ChartSettings properties
+  barWidth: 60,
+  barSpacing: 20,
+  showConnectors: false, // Not applicable for Sankey
+  showValues: true,
+  showCategories: false, // Not applicable for Sankey  
+  showSegmentLabels: false, // Not applicable for Sankey
+  categoryLabelRotation: 0,
+  valuePrefix: '',
+  valueSuffix: '',
+  showGridlines: false, // Not needed for Sankey
+  showAxes: false, // Not applicable for Sankey
+  accentColor: '#6366F1',
+  primaryColor: '#374151',
+  backgroundColor: '#ffffff',
   title: 'Sankey Diagram',
-  width: 900,
-  height: 500,
+  areaOpacity: 0.3,
+  lineWidth: 2,
+  labelSettings: {
+    categoryFontSize: 12,
+    categoryFontColor: '#374151',
+    categoryFontWeight: 'normal',
+    valueFontSize: 10,
+    valueFontColor: '#374151',
+    valueFontWeight: 'normal',
+    segmentLabelFontSize: 9,
+    segmentLabelFontColor: '#374151',
+    segmentLabelFontWeight: 'normal'
+  },
+  chartDimensions: {
+    width: 900,
+    height: 500,
+    autoResize: true,
+    aspectRatio: 'auto'
+  },
+  colors: {
+    baseline: '#6366F1',
+    increase: '#10B981',
+    decrease: '#EF4444',
+    subtotal: '#8B5CF6',
+    total: '#1F2937'
+  },
   
-  // Configurações dos nós
+  // Sankey-specific properties
   nodeWidth: 15,
   nodeMinHeight: 20,
   nodeSpacing: 30,
@@ -237,7 +276,7 @@ export const getOptimalTooltipPosition = (
 export const getNodeColor = (index: number, settings: SankeySettings): string => {
   const palette = sankeyColorPalettes[settings.colorScheme] || sankeyColorPalettes.default;
   
-  if (settings.colorScheme === 'custom' && settings.customColors.length > 0) {
+  if (settings.colorScheme === 'custom' && settings.customColors && settings.customColors.length > 0) {
     return settings.customColors[index % settings.customColors.length];
   }
   

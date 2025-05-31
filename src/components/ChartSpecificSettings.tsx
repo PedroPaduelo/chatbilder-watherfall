@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { X, RotateCcw, Download, Upload, Lightbulb } from 'lucide-react';
 import type { ChartType, ChartSettings } from '../types';
 import { ChartSettingsManager } from '../services/chartSettingsService';
-import SankeyChartConfig from './SankeyChartConfig';
-import { defaultSankeySettings } from '../utils/constants';
+import SankeyChartConfig from './sankey/config/SankeyConfig';
+import { defaultSankeySettings } from './sankey/utils';
+import type { SankeySettings } from './sankey/types';
 
 interface ChartSpecificSettingsProps {
   chartType: ChartType;
@@ -33,7 +34,7 @@ const ChartSpecificSettings: React.FC<ChartSpecificSettingsProps> = ({
   };
 
   // Handler específico para configurações do Sankey
-  const handleSankeySettingsChange = (sankeySettings: any) => {
+  const handleSankeySettingsChange = (sankeySettings: SankeySettings) => {
     const newSettings = { ...localSettings, sankeySettings };
     setLocalSettings(newSettings);
     onSettingsChange(newSettings);
@@ -208,7 +209,7 @@ const ChartSpecificSettings: React.FC<ChartSpecificSettingsProps> = ({
               </div>
               
               <SankeyChartConfig
-                settings={localSettings.sankeySettings || defaultSankeySettings}
+                settings={(localSettings.sankeySettings as SankeySettings) || defaultSankeySettings}
                 onSettingsChange={handleSankeySettingsChange}
               />
             </div>

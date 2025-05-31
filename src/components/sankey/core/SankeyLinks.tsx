@@ -1,6 +1,6 @@
 import React from 'react';
 import type { SankeyLinksProps } from '../types';
-import { getLinkGradientColors } from '../utils';
+import { getLinkGradientColors, sankeyColorPalettes } from '../utils';
 
 const SankeyLinks: React.FC<SankeyLinksProps> = ({
   links,
@@ -9,6 +9,18 @@ const SankeyLinks: React.FC<SankeyLinksProps> = ({
   onLinkHover,
   onMouseLeave
 }) => {
+  // Helper function to get node color with proper fallbacks
+  const getNodeColorSafe = (idx: number): string => {
+    // Use custom colors if available and valid
+    if (settings.customColors && settings.customColors.length > 0) {
+      return settings.customColors[idx % settings.customColors.length];
+    }
+    
+    // Fall back to palette based on color scheme
+    const palette = sankeyColorPalettes[settings.colorScheme] || sankeyColorPalettes.default;
+    return palette[idx % palette.length];
+  };
+
   // Criar gradientes únicos para cada link se necessário
   const gradients = links.map((link, index) => {
     if (!settings.linkGradient) return null;
@@ -18,7 +30,7 @@ const SankeyLinks: React.FC<SankeyLinksProps> = ({
     const { sourceColor, targetColor } = getLinkGradientColors(
       link, 
       settings, 
-      (idx) => settings.customColors[idx % settings.customColors.length] || '#3B82F6',
+      getNodeColorSafe,
       sourceIndex,
       targetIndex
     );
@@ -65,7 +77,7 @@ const SankeyLinks: React.FC<SankeyLinksProps> = ({
             const { sourceColor } = getLinkGradientColors(
               link, 
               settings, 
-              (idx) => settings.customColors[idx % settings.customColors.length] || '#3B82F6',
+              getNodeColorSafe,
               sourceIndex,
               targetIndex
             );
