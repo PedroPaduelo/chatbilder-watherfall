@@ -196,12 +196,22 @@ export const useDashboards = () => {
       const dashboard = await databaseService.getDashboard(id);
       await databaseService.deleteDashboard(id);
       await loadDashboards();
-      addNotification(`Dashboard "${dashboard?.name}" removido`, 'success');
+      addNotification('success', `Dashboard "${dashboard?.name}" removido`);
     } catch (err) {
-      addNotification('Erro ao remover dashboard', 'error');
+      addNotification('error', 'Erro ao remover dashboard');
       throw err;
     }
   }, [loadDashboards, addNotification]);
+
+  // Obter dashboard específico
+  const getDashboard = useCallback(async (id: string) => {
+    try {
+      return await databaseService.getDashboard(id);
+    } catch (err) {
+      addNotification('error', 'Erro ao carregar dashboard');
+      return null;
+    }
+  }, [addNotification]);
 
   // Obter dashboard específico com dados dos gráficos
   const getDashboardWithCharts = useCallback(async (id: string) => {
@@ -225,7 +235,7 @@ export const useDashboards = () => {
         charts: chartsWithData,
       };
     } catch (err) {
-      addNotification('Erro ao carregar dashboard', 'error');
+      addNotification('error', 'Erro ao carregar dashboard');
       return null;
     }
   }, [addNotification]);
@@ -327,6 +337,7 @@ export const useDashboards = () => {
     updateChartInDashboard,
     duplicateDashboard,
     deleteDashboard,
+    getDashboard,
     getDashboardWithCharts,
     getDashboardsStats,
     validateChartPosition,

@@ -115,6 +115,16 @@ export const useSavedCharts = () => {
     }
   }, [loadCharts, addNotification]);
 
+  // Obter gráfico específico
+  const getChart = useCallback(async (id: string) => {
+    try {
+      return await databaseService.getChart(id);
+    } catch (err) {
+      addNotification('error', 'Erro ao carregar gráfico');
+      return null;
+    }
+  }, [addNotification]);
+
   // Buscar gráficos com filtros
   const searchCharts = useCallback(async (filters: {
     chartType?: string;
@@ -234,6 +244,7 @@ export const useSavedCharts = () => {
     updateChart,
     duplicateChart,
     deleteChart,
+    getChart,
     searchCharts,
     loadCharts,
     getChartsStats,

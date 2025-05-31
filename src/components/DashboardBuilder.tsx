@@ -30,6 +30,16 @@ interface DragState {
   startMouse: { x: number; y: number };
 }
 
+interface ChartPosition {
+  x: number;
+  y: number;
+}
+
+interface ChartSize {
+  width: number;
+  height: number;
+}
+
 const GRID_SIZE = 60; // Tamanho de cada célula do grid
 const MIN_CHART_SIZE = { width: 2, height: 2 };
 const MAX_CHART_SIZE = { width: 8, height: 6 };
@@ -39,14 +49,12 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   onClose,
 }) => {
   const {
-    activeDashboard,
     createDashboard,
     updateDashboard,
-    deleteDashboard,
-    setActiveDashboard
+    getDashboard
   } = useDashboards();
 
-  const { charts: savedCharts } = useSavedCharts();
+  const { charts: savedCharts, getChart } = useSavedCharts();
 
   const [currentDashboard, setCurrentDashboard] = useState<Dashboard | null>(null);
   const [dashboardCharts, setDashboardCharts] = useState<any[]>([]);
@@ -66,6 +74,150 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [gridSize, setGridSize] = useState({ width: 12, height: 8 });
 
+  // Função para validar posição do gráfico
+  const validateChartPosition = useCallback((
+    position: ChartPosition,
+    size: ChartSize,
+    excludeChartId?: string
+  ): boolean => {
+    // Verificar se está dentro dos limites do grid
+    if (position.x < 0 || position.y < 0) return false;
+    if (position.x + size.width > gridSize.width) return false;
+    if (position.y + size.height > gridSize.height) return false;
+
+    // Verificar colisão com outros gráficos
+    const otherCharts = dashboardCharts.filter(chart => chart.chartId !== excludeChartId);
+    
+    for (const chart of otherCharts) {
+      const chartRight = chart.position.x + chart.size.width;
+      const chartBottom = chart.position.y + chart.size.height;
+      const newRight = position.x + size.width;
+      const newBottom = position.y + size.height;
+
+      // Verificar sobreposição
+      if (!(position.x >= chartRight || newRight <= chart.position.x ||
+            position.y >= chartBottom || newBottom <= chart.position.y)) {
+        return false;
+      }
+    }
+
+    return true;
+  }, [gridSize, dashboardCharts]);
+
+  // Função para encontrar próxima posição disponível
+  const findNextAvailablePosition = useCallback((
+    size: ChartSize
+  ): ChartPosition | null => {
+    for (let y = 0; y <= gridSize.height - size.height; y++) {
+      for (let x = 0; x <= gridSize.width - size.width; x++) {
+        const position = { x, y };
+        if (validateChartPosition(position, size)) {
+          return position;
+        }
+      }
+    }
+    return null;
+  }, [gridSize, validateChartPosition]);
+
+  // Função para obter dashboard com gráficos
+  const getDashboardWithCharts = useCallback(async (id: string) => {
+    try {
+      const dashboard = await getDashboard(id);
+      if (!dashboard) return null;
+
+      // Carregar dados dos gráficos
+      const chartsWithData = await Promise.all(
+        dashboard.charts.map(async (chartRef: any) => {
+          const chartData = await getChart(chartRef.chartId);
+          return {
+            ...chartRef,
+            chartData
+          };
+        })
+      );
+
+      return {
+        ...dashboard,
+        charts: chartsWithData
+      };
+    } catch (error) {
+      console.error('Erro ao carregar dashboard:', error);
+      return null;
+    }
+  }, [getDashboard, getChart]);
+
+  // Função para adicionar gráfico ao dashboard
+  const addChartToDashboard = useCallback(async (
+    dashboardId: string,
+    chartId: string,
+    position: ChartPosition,
+    size: ChartSize
+  ) => {
+    try {
+      const dashboard = await getDashboard(dashboardId);
+      if (!dashboard) return;
+
+      const newChart = {
+        chartId,
+        position,
+        size,
+        title: '',
+        settings: {}
+      };
+
+      const updatedCharts = [...dashboard.charts, newChart];
+      
+      await updateDashboard(dashboardId, {
+        charts: updatedCharts
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar gráfico:', error);
+    }
+  }, [getDashboard, updateDashboard]);
+
+  // Função para remover gráfico do dashboard
+  const removeChartFromDashboard = useCallback(async (
+    dashboardId: string,
+    chartId: string
+  ) => {
+    try {
+      const dashboard = await getDashboard(dashboardId);
+      if (!dashboard) return;
+
+      const updatedCharts = dashboard.charts.filter((chart: any) => chart.chartId !== chartId);
+      
+      await updateDashboard(dashboardId, {
+        charts: updatedCharts
+      });
+    } catch (error) {
+      console.error('Erro ao remover gráfico:', error);
+    }
+  }, [getDashboard, updateDashboard]);
+
+  // Função para atualizar gráfico no dashboard
+  const updateChartInDashboard = useCallback(async (
+    dashboardId: string,
+    chartId: string,
+    updates: Partial<{ position: ChartPosition; size: ChartSize; title: string; settings: any }>
+  ) => {
+    try {
+      const dashboard = await getDashboard(dashboardId);
+      if (!dashboard) return;
+
+      const updatedCharts = dashboard.charts.map((chart: any) =>
+        chart.chartId === chartId
+          ? { ...chart, ...updates }
+          : chart
+      );
+      
+      await updateDashboard(dashboardId, {
+        charts: updatedCharts
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar gráfico:', error);
+    }
+  }, [getDashboard, updateDashboard]);
+
   // Carregar dashboard
   useEffect(() => {
     if (dashboardId) {
@@ -82,8 +234,8 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       setCurrentDashboard(dashboardWithCharts);
       setDashboardCharts(dashboardWithCharts.charts);
       setGridSize({
-        width: dashboardWithCharts.layout.columns,
-        height: dashboardWithCharts.layout.rows,
+        width: dashboardWithCharts.layout?.columns || 12,
+        height: dashboardWithCharts.layout?.rows || 8,
       });
     }
   };
@@ -93,6 +245,11 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       const newId = await createDashboard({
         name: `Novo Dashboard ${new Date().toLocaleString()}`,
         description: 'Dashboard criado automaticamente',
+        layout: {
+          columns: 12,
+          rows: 8,
+          gap: 16
+        }
       });
       if (newId) {
         await loadDashboard(newId);
@@ -128,10 +285,6 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
     if (!dragState.isDragging && !dragState.isResizing) return;
     if (!dragState.draggedChart || !containerRef.current) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
     if (dragState.isDragging) {
       const deltaX = Math.floor((e.clientX - dragState.startMouse.x) / GRID_SIZE);
       const deltaY = Math.floor((e.clientY - dragState.startMouse.y) / GRID_SIZE);
@@ -142,7 +295,6 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       };
 
       if (currentDashboard && validateChartPosition(
-        currentDashboard.id,
         newPosition,
         dragState.startSize,
         dragState.draggedChart
@@ -220,7 +372,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   const handleAddChart = async (chartId: string) => {
     if (!currentDashboard) return;
 
-    const position = findNextAvailablePosition(currentDashboard.id, { width: 3, height: 3 });
+    const position = findNextAvailablePosition({ width: 3, height: 3 });
     if (position) {
       await addChartToDashboard(
         currentDashboard.id,
@@ -434,6 +586,16 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
                       ...dashboardChart.chartData.settings,
                       width: dashboardChart.size.width * GRID_SIZE - 32,
                       height: (dashboardChart.size.height * GRID_SIZE) - (isEditMode ? 80 : 32),
+                    }}
+                    dimensions={{
+                      width: dashboardChart.size.width * GRID_SIZE - 32,
+                      height: (dashboardChart.size.height * GRID_SIZE) - (isEditMode ? 80 : 32),
+                      margin: {
+                        top: 10,
+                        right: 10,
+                        bottom: 10,
+                        left: 10
+                      }
                     }}
                   />
                 ) : (

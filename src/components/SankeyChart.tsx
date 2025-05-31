@@ -758,7 +758,7 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
           +
         </button>
         <button
-          onClick={() => setTransform(prev => ({ ...prev, scale: Math.max(prev.scale / 1.2, 0.5) }))}
+          onClick={() => setTransform(prev => ({ ...prev, scale: Math.max(prev.scale / 1, 0.5) }))}
           className="w-8 h-8 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold"
           title="Zoom Out"
         >
@@ -772,7 +772,7 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
           ⌂
         </button>
         <div className="text-xs text-gray-500 text-center pt-1">
-          {Math.round(transform.scale * 100)}%
+          {Math.round(transform.scale * 80)}%
         </div>
       </div>
 
