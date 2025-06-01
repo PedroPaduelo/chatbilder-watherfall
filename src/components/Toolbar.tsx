@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Upload, Image, FileText, Save, BookOpen, Settings } from 'lucide-react';
+import { Download, Upload, Image, FileText, Save, Settings } from 'lucide-react';
 import type { ChartType } from '../types';
 
 export interface ToolbarProps {
@@ -9,8 +9,8 @@ export interface ToolbarProps {
   onExportSVG: () => void;
   onExportJSON: () => void;
   onExportHTML: () => void;
-  onSaveView: () => void;
-  onManageViews: () => void;
+  onSaveView?: () => void;
+  onManageViews?: () => void;
   onShowChartSettings: () => void;
   onSaveChart?: () => Promise<void>;
 }
@@ -44,39 +44,19 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
   return (
     <div className="flex flex-wrap gap-2">
-      {/* Saved Views Section */}
+      {/* Save Section */}
       <div className="flex gap-2 border-r border-gray-200 dark:border-gray-600 pr-2">
-        <button
-          type="button"
-          onClick={onSaveView}
-          className="px-3 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 flex items-center gap-2 text-sm transition-colors"
-          title="Salvar Visualização Atual"
-        >
-          <Save size={16} />
-          Salvar
-        </button>
-        
         {onSaveChart && (
           <button
             type="button"
             onClick={onSaveChart}
-            className="px-3 py-2 bg-indigo-600 dark:bg-indigo-700 text-white rounded hover:bg-indigo-700 dark:hover:bg-indigo-800 flex items-center gap-2 text-sm transition-colors"
+            className="px-3 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 flex items-center gap-2 text-sm transition-colors"
             title="Salvar Gráfico Atual"
           >
             <Save size={16} />
-            Salvar Gráfico
+            Salvar
           </button>
         )}
-        
-        <button
-          type="button"
-          onClick={onManageViews}
-          className="px-3 py-2 border border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2 text-sm transition-colors"
-          title="Gerenciar Visualizações Salvas"
-        >
-          <BookOpen size={16} />
-          Minhas Views
-        </button>
       </div>
 
       {/* Import Section */}
