@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Download, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import type { SankeyData, SankeyNode, SankeyLink } from '../types';
-import { validateSankeyData, processRawSankeyData } from '../utils';
+import { processRawSankeyData } from '../utils';
 
 interface SankeyImportProps {
   onDataImport: (data: SankeyData) => void;
@@ -77,8 +77,7 @@ const SankeyImport: React.FC<SankeyImportProps> = ({ onDataImport, onError }) =>
         throw new Error('Formato de arquivo não suportado. Use JSON ou CSV.');
       }
 
-      const processedData = processRawSankeyData(data);
-      const validation = validateSankeyData(processedData);
+      const { data: processedData, validation } = processRawSankeyData(data);
       
       setValidationResult(validation);
 
@@ -164,9 +163,11 @@ const SankeyImport: React.FC<SankeyImportProps> = ({ onDataImport, onError }) =>
 
   // Carregar dados de exemplo
   const loadSampleData = () => {
-    const validation = validateSankeyData(sampleData);
+    const { data: processedData, validation } = processRawSankeyData(sampleData);
     setValidationResult(validation);
-    onDataImport(sampleData);
+    if (validation.isValid) {
+      onDataImport(processedData);
+    }
   };
 
   // Baixar template

@@ -12,7 +12,7 @@ export const WaterfallBar: React.FC<WaterfallBarProps> = ({
 }) => {
   if (!payload || height === 0) return null;
 
-  const color = getWaterfallBarColor(payload, settings);
+  const color = getWaterfallBarColor(payload.type, settings.colors);
   
   // Handle stacked segments
   if (payload.segments && payload.segments.length > 0) {

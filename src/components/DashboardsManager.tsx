@@ -9,11 +9,7 @@ import {
   Edit3, 
   Copy, 
   Trash2, 
-  Layout,
-  BarChart3,
-  TrendingUp,
-  Share2,
-  Download
+  Layout
 } from 'lucide-react';
 import { useDashboards } from '../hooks/useDashboards';
 import { Dashboard } from '../services/databaseService';
@@ -28,7 +24,6 @@ interface DashboardsManagerProps {
 export const DashboardsManager: React.FC<DashboardsManagerProps> = ({
   onSelectDashboard,
   onEditDashboard,
-  onCreateDashboard,
 }) => {
   const {
     dashboards,

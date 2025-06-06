@@ -274,13 +274,100 @@ export const getOptimalTooltipPosition = (
 
 // Função para obter cor do nó baseada no esquema
 export const getNodeColor = (index: number, settings: SankeySettings): string => {
-  const palette = sankeyColorPalettes[settings.colorScheme] || sankeyColorPalettes.default;
+  const paletteMap = {
+    default: sankeyColorPalettes.default,
+    categorical: sankeyColorPalettes.categorical,
+    gradient: sankeyColorPalettes.gradient
+  };
+  
+  const palette = paletteMap[settings.colorScheme as keyof typeof paletteMap] || sankeyColorPalettes.default;
   
   if (settings.colorScheme === 'custom' && settings.customColors && settings.customColors.length > 0) {
     return settings.customColors[index % settings.customColors.length];
   }
   
   return palette[index % palette.length];
+};
+
+// Função para processar dados brutos do Sankey
+export const processRawSankeyData = (rawData: any): { data: SankeyData; validation: { isValid: boolean; errors: string[]; warnings: string[] } } => {
+  const validation = { isValid: true, errors: [] as string[], warnings: [] as string[] };
+  
+  if (!rawData) {
+    validation.isValid = false;
+    validation.errors.push('Dados não fornecidos');
+    return { data: { nodes: [], links: [] }, validation };
+  }
+
+  const nodes: any[] = [];
+  const links: any[] = [];
+
+  try {
+    // Se for um array, assumir que são links no formato source,target,value
+    if (Array.isArray(rawData)) {
+      const nodeIds = new Set<string>();
+      
+      rawData.forEach((row, index) => {
+        if (typeof row === 'object' && row.source && row.target && row.value !== undefined) {
+          nodeIds.add(String(row.source));
+          nodeIds.add(String(row.target));
+          links.push({
+            source: String(row.source),
+            target: String(row.target),
+            value: Number(row.value) || 0
+          });
+        } else {
+          validation.warnings.push(`Linha ${index + 1}: formato inválido, ignorando`);
+        }
+      });
+
+      // Criar nós a partir dos IDs únicos
+      Array.from(nodeIds).forEach(id => {
+        nodes.push({ id, name: id });
+      });
+
+    } else if (rawData.nodes && rawData.links) {
+      // Formato direto com nodes e links
+      if (Array.isArray(rawData.nodes)) {
+        rawData.nodes.forEach((node: any) => {
+          if (node.id) {
+            nodes.push({
+              id: String(node.id),
+              name: String(node.name || node.id)
+            });
+          }
+        });
+      }
+
+      if (Array.isArray(rawData.links)) {
+        rawData.links.forEach((link: any) => {
+          if (link.source && link.target && link.value !== undefined) {
+            links.push({
+              source: String(link.source),
+              target: String(link.target),
+              value: Number(link.value) || 0
+            });
+          }
+        });
+      }
+    }
+
+    if (nodes.length === 0) {
+      validation.isValid = false;
+      validation.errors.push('Nenhum nó válido encontrado');
+    }
+
+    if (links.length === 0) {
+      validation.isValid = false;
+      validation.errors.push('Nenhum link válido encontrado');
+    }
+
+  } catch (error) {
+    validation.isValid = false;
+    validation.errors.push(`Erro ao processar dados: ${error}`);
+  }
+
+  return { data: { nodes, links }, validation };
 };
 
 // Função para calcular cores de gradiente para links

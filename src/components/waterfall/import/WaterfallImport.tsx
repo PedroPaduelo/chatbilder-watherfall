@@ -1,6 +1,6 @@
 import React from 'react';
 import { Download, FileText, Database } from 'lucide-react';
-import { generateSampleWaterfallData, validateWaterfallData } from '../utils';
+import { generateSampleWaterfallData } from '../utils';
 import { ExportService } from '../../../services/exportService';
 import { defaultSettings } from '../../../utils/constants';
 

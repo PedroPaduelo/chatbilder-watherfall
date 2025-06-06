@@ -46,7 +46,7 @@ const ChartCreatorPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Hooks
-  const { notifications, notifySuccess, notifyError } = useNotifications();
+  const { notifySuccess, notifyError } = useNotifications();
   const { saveView } = useSavedViews();
   const { saveChart, updateChart, getChart } = useSavedCharts();
   const dimensions = useChartDimensions(filteredData, settings);

@@ -9,7 +9,7 @@ interface ValidationDisplayProps {
 export const ValidationDisplay: React.FC<ValidationDisplayProps> = ({
   validation
 }) => {
-  if (!validation.isValid) {
+  if (!validation.valid) {
     return (
       <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
         <div className="flex items-start gap-3">
@@ -40,7 +40,7 @@ export const ValidationDisplay: React.FC<ValidationDisplayProps> = ({
             Dados válidos!
           </h4>
           <p className="text-sm text-green-700 dark:text-green-300">
-            {validation.recordCount} registros prontos para importação
+            Dados prontos para importação
           </p>
         </div>
       </div>

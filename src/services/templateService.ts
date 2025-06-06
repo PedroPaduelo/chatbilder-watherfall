@@ -304,4 +304,17 @@ export class TemplateService {
 
     return { valid: errors.length === 0, errors };
   }
+
+  /**
+   * Gera template como string (usado pelo UniversalImporter)
+   */
+  static generateTemplate(chartType: ChartType, format: 'csv' | 'json' = 'csv'): string {
+    const template = this.getTemplate(chartType);
+    
+    if (chartType === 'sankey' || format === 'json') {
+      return chartType === 'sankey' ? template.jsonTemplate : JSON.stringify(template.sampleData, null, 2);
+    } else {
+      return template.csvTemplate;
+    }
+  }
 }

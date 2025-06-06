@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import type { 
   SankeyChartProps, 
-  SankeyTooltip, 
+  SankeyTooltip as SankeyTooltipType, 
   ProcessedSankeyNode, 
   ProcessedSankeyLink 
 } from '../types';
@@ -23,7 +23,7 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
   height = 500
 }) => {
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
-  const [tooltip, setTooltip] = useState<SankeyTooltip>({
+  const [tooltip, setTooltip] = useState<SankeyTooltipType>({
     show: false,
     x: 0,
     y: 0,
@@ -38,13 +38,22 @@ const SankeyChart: React.FC<SankeyChartProps> = ({
 
   // Processar dados usando hooks customizados
   const processedData = useSankeyData(data, chartWidth, chartHeight);
-  const { nodes, links } = useSankeyLayout(processedData, chartHeight, settings);
+  const { nodes, links } = useSankeyLayout(
+    processedData.nodesByLevel ? processedData : { 
+      nodes: processedData.nodes, 
+      links: processedData.links, 
+      nodesByLevel: [], 
+      maxLevel: 0 
+    }, 
+    chartHeight, 
+    settings
+  );
 
   // Função para lidar com hover de nós
   const handleNodeHover = useCallback((event: React.MouseEvent, node: ProcessedSankeyNode) => {
     if (!settings.showTooltips) return;
 
-    const rect = event.currentTarget.getBoundingClientRect();
+    // const rect = event.currentTarget.getBoundingClientRect();
     const containerRect = event.currentTarget.closest('svg')?.getBoundingClientRect();
     
     if (!containerRect) return;

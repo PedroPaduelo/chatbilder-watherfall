@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Grid, Eye } from 'lucide-react';
+import { ArrowLeft, Save, Grid, Eye } from 'lucide-react';
 import { DashboardBuilder } from '../components/DashboardBuilder';
 import { useDashboards } from '../hooks/useDashboards';
-import { useSavedCharts } from '../hooks/useSavedCharts';
+// import { useSavedCharts } from '../hooks/useSavedCharts';
 import { useNotifications } from '../hooks/useNotifications';
 import { Dashboard } from '../services/databaseService';
 
@@ -21,7 +21,7 @@ const DashboardCreatorPage: React.FC = () => {
 
   // Hooks
   const { getDashboard, updateDashboard, createDashboard } = useDashboards();
-  const { charts } = useSavedCharts();
+  // const { charts } = useSavedCharts();
   const { notifySuccess, notifyError } = useNotifications();
 
   // Load existing dashboard if editing
@@ -98,9 +98,9 @@ const DashboardCreatorPage: React.FC = () => {
   };
 
   // Handle dashboard changes
-  const handleDashboardChange = (updatedDashboard: Dashboard) => {
-    setDashboard(updatedDashboard);
-  };
+  // const handleDashboardChange = (updatedDashboard: Dashboard) => {
+  //   setDashboard(updatedDashboard);
+  // };
 
   if (isLoading) {
     return (
@@ -192,10 +192,8 @@ const DashboardCreatorPage: React.FC = () => {
       {/* Dashboard Builder */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <DashboardBuilder
-          dashboard={dashboard}
-          availableCharts={charts}
-          isPreviewMode={isPreviewMode}
-          onDashboardChange={handleDashboardChange}
+          dashboardId={dashboard?.id === 'new' ? undefined : dashboard?.id}
+          onClose={() => navigate('/dashboards')}
         />
       </div>
 
@@ -209,17 +207,19 @@ const DashboardCreatorPage: React.FC = () => {
             <div>
               <h4 className="font-medium mb-2">Adicionando Gráficos:</h4>
               <ul className="space-y-1">
-                <li>• Arraste gráficos da barra lateral para o grid</li>
-                <li>• Redimensione arrastando as bordas</li>
+                <li>• Clique em "Adicionar Gráfico" para selecionar gráficos salvos</li>
+                <li>• Redimensione arrastando o handle azul no canto inferior direito</li>
                 <li>• Mova gráficos arrastando o cabeçalho</li>
+                <li>• Clique no X para remover gráficos</li>
               </ul>
             </div>
             <div>
               <h4 className="font-medium mb-2">Dicas:</h4>
               <ul className="space-y-1">
-                <li>• Use o modo visualização para testar</li>
-                <li>• Salve frequentemente suas alterações</li>
-                <li>• Organize por temas ou métricas</li>
+                <li>• Use o modo visualização para testar o resultado final</li>
+                <li>• Configure o grid nas configurações do dashboard</li>
+                <li>• Organize gráficos por tema ou importância</li>
+                <li>• As alterações são salvas automaticamente</li>
               </ul>
             </div>
           </div>

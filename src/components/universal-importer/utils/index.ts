@@ -99,3 +99,7 @@ export class TemplateDownloader {
     TemplateService.downloadTemplate(chartType, format);
   }
 }
+
+export const generateTemplate = (chartType: ChartType, format: 'csv' | 'json' = 'csv'): string => {
+  return TemplateService.generateTemplate(chartType, format);
+};

@@ -17,7 +17,12 @@ const SankeyLinks: React.FC<SankeyLinksProps> = ({
     }
     
     // Fall back to palette based on color scheme
-    const palette = sankeyColorPalettes[settings.colorScheme] || sankeyColorPalettes.default;
+    const paletteMap = {
+      default: sankeyColorPalettes.default,
+      categorical: sankeyColorPalettes.categorical,
+      gradient: sankeyColorPalettes.gradient
+    };
+    const palette = paletteMap[settings.colorScheme as keyof typeof paletteMap] || sankeyColorPalettes.default;
     return palette[idx % palette.length];
   };
 

@@ -18,7 +18,7 @@ export const useWaterfallData = (data: DataRow[]) => {
     let hasBaseline = false;
     let hasTotal = false;
 
-    const waterfallData = data.map((item, index) => {
+    const waterfallData = data.map((item) => {
       // Check for baseline and total
       if (item.type === 'baseline') hasBaseline = true;
       if (item.type === 'total') hasTotal = true;

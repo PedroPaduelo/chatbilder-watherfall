@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { 
-  Settings, 
   Palette, 
   BarChart3, 
   Eye, 
-  Grid, 
   Type,
   ChevronDown,
   ChevronRight,
@@ -19,7 +17,7 @@ interface WaterfallConfigProps {
 
 interface SectionHeaderProps {
   title: string;
-  icon: React.ComponentType<{ size?: number }>;
+  icon: React.ElementType;
   isExpanded: boolean;
   onToggle: () => void;
 }
@@ -30,7 +28,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, icon: Icon, isExpa
     className="w-full flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
   >
     <div className="flex items-center gap-2">
-      <Icon size={18} className="text-blue-600 dark:text-blue-400" />
+      <Icon size={18} />
       <span className="font-medium text-blue-900 dark:text-blue-100">{title}</span>
     </div>
     {isExpanded ? 
@@ -306,12 +304,12 @@ export const WaterfallConfig: React.FC<WaterfallConfigProps> = ({
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
-                      value={settings.colors[key] || '#3B82F6'}
+                      value={settings.colors[key as keyof typeof settings.colors] || '#3B82F6'}
                       onChange={(e) => handleColorChange(key, e.target.value)}
                       className="w-12 h-8 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
                     />
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {settings.colors[key] || '#3B82F6'}
+                      {settings.colors[key as keyof typeof settings.colors] || '#3B82F6'}
                     </span>
                   </div>
                 </div>

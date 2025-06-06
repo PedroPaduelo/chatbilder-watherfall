@@ -67,30 +67,33 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 p-4 transition-opacity"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 dark:bg-black/70 p-4 backdrop-blur-sm transition-all duration-300"
       onClick={handleBackdropClick}
+      style={{
+        animation: 'fadeIn 0.3s ease-out forwards'
+      }}
     >
       <div 
         ref={modalRef}
-        className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${maxWidthClass} max-h-[90vh] flex flex-col animate-scale-in`}
+        className={`bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full ${maxWidthClass} max-h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700`}
         style={{ 
-          animation: 'scaleIn 0.2s ease-out forwards',
+          animation: 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
           opacity: 1
         }}
       >
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{title}</h2>
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110 active:scale-95"
             aria-label="Fechar"
             type="button"
           >
-            <X size={20} className="text-gray-500 dark:text-gray-400" />
+            <X size={20} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors" />
           </button>
         </div>
         
-        <div className="overflow-y-auto p-6 flex-1">
+        <div className="overflow-y-auto p-6 flex-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
           {children}
         </div>
       </div>

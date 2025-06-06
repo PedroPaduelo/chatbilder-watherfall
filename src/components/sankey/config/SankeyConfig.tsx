@@ -45,11 +45,11 @@ const SankeyConfig: React.FC<SankeyConfigProps> = ({ settings, onSettingsChange 
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Largura</label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Largura do Gráfico</label>
             <input
               type="number"
-              value={settings.width}
-              onChange={(e) => handleChange('width', parseInt(e.target.value))}
+              value={settings.chartDimensions.width}
+              onChange={(e) => handleChange('chartDimensions', { ...settings.chartDimensions, width: parseInt(e.target.value) })}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               min="400"
               max="2000"
@@ -57,11 +57,11 @@ const SankeyConfig: React.FC<SankeyConfigProps> = ({ settings, onSettingsChange 
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Altura</label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Altura do Gráfico</label>
             <input
               type="number"
-              value={settings.height}
-              onChange={(e) => handleChange('height', parseInt(e.target.value))}
+              value={settings.chartDimensions.height}
+              onChange={(e) => handleChange('chartDimensions', { ...settings.chartDimensions, height: parseInt(e.target.value) })}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               min="300"
               max="1200"

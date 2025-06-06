@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useChartMetrics } from '../hooks/useChartMetrics';
 import { formatValue } from '../utils/helpers';
-import WaterfallChart from './WaterfallChart';
+import { WaterfallChart } from './waterfall';
 import type { DataRow, ChartSettings } from '../types';
 
 interface MetricsDashboardProps {

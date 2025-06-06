@@ -146,34 +146,6 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
     }
   }, [getDashboard, getChart]);
 
-  // Função para adicionar gráfico ao dashboard
-  const addChartToDashboard = useCallback(async (
-    dashboardId: string,
-    chartId: string,
-    position: ChartPosition,
-    size: ChartSize
-  ) => {
-    try {
-      const dashboard = await getDashboard(dashboardId);
-      if (!dashboard) return;
-
-      const newChart = {
-        chartId,
-        position,
-        size,
-        title: '',
-        settings: {}
-      };
-
-      const updatedCharts = [...dashboard.charts, newChart];
-      
-      await updateDashboard(dashboardId, {
-        charts: updatedCharts
-      });
-    } catch (error) {
-      console.error('Erro ao adicionar gráfico:', error);
-    }
-  }, [getDashboard, updateDashboard]);
 
   // Função para remover gráfico do dashboard
   const removeChartFromDashboard = useCallback(async (
@@ -220,23 +192,31 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
   // Carregar dashboard
   useEffect(() => {
-    if (dashboardId) {
-      loadDashboard(dashboardId);
-    } else {
-      // Criar novo dashboard
-      handleCreateDashboard();
-    }
+    const initialize = async () => {
+      if (dashboardId && dashboardId !== 'new') {
+        await loadDashboard(dashboardId);
+      } else {
+        // Criar novo dashboard
+        await handleCreateDashboard();
+      }
+    };
+    
+    initialize();
   }, [dashboardId]);
 
   const loadDashboard = async (id: string) => {
-    const dashboardWithCharts = await getDashboardWithCharts(id);
-    if (dashboardWithCharts) {
-      setCurrentDashboard(dashboardWithCharts);
-      setDashboardCharts(dashboardWithCharts.charts);
-      setGridSize({
-        width: dashboardWithCharts.layout?.columns || 12,
-        height: dashboardWithCharts.layout?.rows || 8,
-      });
+    try {
+      const dashboardWithCharts = await getDashboardWithCharts(id);
+      if (dashboardWithCharts) {
+        setCurrentDashboard(dashboardWithCharts);
+        setDashboardCharts(dashboardWithCharts.charts || []);
+        setGridSize({
+          width: dashboardWithCharts.layout?.columns || 12,
+          height: dashboardWithCharts.layout?.rows || 8,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dashboard:', error);
     }
   };
 
@@ -252,8 +232,16 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
         }
       });
       if (newId) {
-        await loadDashboard(newId);
-        setIsEditMode(true);
+        const newDashboard = await getDashboard(newId);
+        if (newDashboard) {
+          setCurrentDashboard(newDashboard);
+          setDashboardCharts([]);
+          setGridSize({
+            width: newDashboard.layout?.columns || 12,
+            height: newDashboard.layout?.rows || 8,
+          });
+          setIsEditMode(true);
+        }
       }
     } catch (error) {
       console.error('Erro ao criar dashboard:', error);
@@ -263,15 +251,17 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   // Funções de drag and drop
   const handleMouseDown = useCallback((
     e: React.MouseEvent,
-    chartId: string
+    chartId: string,
+    action: 'drag' | 'resize' = 'drag'
   ) => {
     e.preventDefault();
+    e.stopPropagation();
     const chart = dashboardCharts.find(c => c.chartId === chartId);
     if (!chart || !isEditMode) return;
 
     setDragState({
-      isDragging: true,
-      isResizing: false,
+      isDragging: action === 'drag',
+      isResizing: action === 'resize',
       draggedChart: chartId,
       startPosition: { x: chart.position.x, y: chart.position.y },
       startSize: { width: chart.size.width, height: chart.size.height },
@@ -316,15 +306,28 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
       // Verificar se o novo tamanho não ultrapassa os limites do grid
       const chart = dashboardCharts.find(c => c.chartId === dragState.draggedChart);
-      if (chart && 
-          chart.position.x + newSize.width <= gridSize.width &&
-          chart.position.y + newSize.height <= gridSize.height) {
+      if (chart) {
+        // Verificar limites do grid
+        const maxWidth = gridSize.width - chart.position.x;
+        const maxHeight = gridSize.height - chart.position.y;
         
-        setDashboardCharts(prev => prev.map(chart =>
-          chart.chartId === dragState.draggedChart
-            ? { ...chart, size: newSize }
-            : chart
-        ));
+        const constrainedSize = {
+          width: Math.min(newSize.width, maxWidth),
+          height: Math.min(newSize.height, maxHeight)
+        };
+
+        // Verificar colisões com outros gráficos
+        if (validateChartPosition(
+          chart.position,
+          constrainedSize,
+          dragState.draggedChart
+        )) {
+          setDashboardCharts(prev => prev.map(chart =>
+            chart.chartId === dragState.draggedChart
+              ? { ...chart, size: constrainedSize }
+              : chart
+          ));
+        }
       }
     }
   }, [dragState, gridSize, currentDashboard, validateChartPosition, dashboardCharts]);
@@ -372,15 +375,37 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   const handleAddChart = async (chartId: string) => {
     if (!currentDashboard) return;
 
-    const position = findNextAvailablePosition({ width: 3, height: 3 });
-    if (position) {
-      await addChartToDashboard(
-        currentDashboard.id,
-        chartId,
-        position,
-        { width: 3, height: 3 }
-      );
-      await loadDashboard(currentDashboard.id);
+    try {
+      const position = findNextAvailablePosition({ width: 4, height: 3 });
+      if (position) {
+        const chartData = await getChart(chartId);
+        const newChart = {
+          chartId,
+          position,
+          size: { width: 4, height: 3 },
+          title: chartData?.name || 'Gráfico',
+          settings: {}
+        };
+
+        // Atualizar localmente primeiro
+        const updatedCharts = [...dashboardCharts, { ...newChart, chartData }];
+        setDashboardCharts(updatedCharts);
+
+        // Salvar no banco
+        await updateDashboard(currentDashboard.id, {
+          charts: [...(currentDashboard.charts || []), newChart]
+        });
+
+        // Atualizar estado local do dashboard
+        setCurrentDashboard(prev => prev ? {
+          ...prev,
+          charts: [...(prev.charts || []), newChart]
+        } : null);
+      } else {
+        console.warn('Não há espaço disponível no dashboard');
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar gráfico:', error);
     }
     setShowAddChart(false);
   };
@@ -552,19 +577,20 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
             >
               {/* Chart Header */}
               {isEditMode && (
-                <div className="absolute top-0 left-0 right-0 bg-gray-50 dark:bg-gray-600 px-3 py-2 rounded-t-lg border-b border-gray-200 dark:border-gray-500 flex items-center justify-between">
+                <div 
+                  className="absolute top-0 left-0 right-0 bg-gray-50 dark:bg-gray-600 px-3 py-2 rounded-t-lg border-b border-gray-200 dark:border-gray-500 flex items-center justify-between cursor-move"
+                  onMouseDown={(e) => handleMouseDown(e, dashboardChart.chartId, 'drag')}
+                >
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
                     {dashboardChart.title || dashboardChart.chartData?.name || 'Gráfico'}
                   </span>
                   <div className="flex gap-1">
+                    <Move className="w-3 h-3 text-gray-400" />
                     <button
-                      onMouseDown={(e) => handleMouseDown(e, dashboardChart.chartId)}
-                      className="p-1 text-gray-400 hover:text-gray-600 cursor-move"
-                    >
-                      <Move className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => handleRemoveChart(dashboardChart.chartId)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveChart(dashboardChart.chartId);
+                      }}
                       className="p-1 text-gray-400 hover:text-red-600"
                     >
                       <X className="w-3 h-3" />
@@ -607,12 +633,17 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
               {/* Resize Handle */}
               {isEditMode && selectedChart === dashboardChart.chartId && (
-                <button
-                  onMouseDown={(e) => handleMouseDown(e, dashboardChart.chartId)}
-                  className="absolute bottom-0 right-0 w-4 h-4 bg-blue-500 rounded-tl-lg cursor-se-resize opacity-75 hover:opacity-100"
-                >
-                  <Expand className="w-3 h-3 text-white" />
-                </button>
+                <div className="absolute bottom-0 right-0">
+                  <button
+                    onMouseDown={(e) => handleMouseDown(e, dashboardChart.chartId, 'resize')}
+                    className="w-6 h-6 bg-blue-500 rounded-tl-lg cursor-se-resize opacity-75 hover:opacity-100 flex items-center justify-center transform translate-x-1 translate-y-1 shadow-lg"
+                    title="Redimensionar gráfico"
+                  >
+                    <Expand className="w-3 h-3 text-white" />
+                  </button>
+                  {/* Corner lines for better visibility */}
+                  <div className="absolute bottom-0 right-0 w-2 h-2 border-r-2 border-b-2 border-blue-400 opacity-50"></div>
+                </div>
               )}
             </div>
           ))}

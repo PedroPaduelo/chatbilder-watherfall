@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import type { ChartType, DataRow, SankeyData } from '../../../types';
-import type { ValidationResult, FileProcessingState } from '../types';
+import type { FileProcessingState } from '../types';
 import { FileProcessor } from '../utils';
 
 export function useFileUpload(

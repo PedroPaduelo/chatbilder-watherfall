@@ -140,7 +140,7 @@ export const RechartsWaterfall: React.FC<WaterfallChartProps> = ({
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={entry.color || settings.colors?.[entry.type]}
+                fill={entry.color || settings.colors[entry.type as keyof typeof settings.colors] || '#3B82F6'}
                 fillOpacity={hoveredIndex === index ? 0.8 : 1}
               />
             ))}
