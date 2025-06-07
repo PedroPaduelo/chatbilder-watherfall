@@ -1,29 +1,24 @@
+// Main Sankey chart component
 export { default as SankeyChart } from './core/SankeyChart';
+
+// Configuration component
 export { default as SankeyConfig } from './config/SankeyConfig';
-export { default as SankeyImport } from './import/SankeyImport';
 
-// Export types
-export type {
-  SankeyNode,
-  SankeyLink,
-  SankeyData,
-  ProcessedSankeyNode,
-  ProcessedSankeyLink,
-  SankeySettings,
-  SankeyChartProps
-} from './types';
+// Core rendering components
+export { default as SankeyNodes } from './core/SankeyNodes';
+export { default as SankeyLinks } from './core/SankeyLinks';
+export { default as SankeyLabels } from './core/SankeyLabels';
+export { default as SankeyTooltip } from './core/SankeyTooltip';
+export { default as SankeyControls } from './core/SankeyControls';
 
-// Export hooks
-export { useSankeyData, useSankeyLayout } from './hooks';
+// Hooks
+export * from './hooks';
 
-// Export utils
-export {
-  defaultSankeySettings,
-  sankeyColorPalettes,
-  processRawSankeyData,
-  generateNodeTooltip,
-  generateLinkTooltip,
-  getOptimalTooltipPosition,
-  getNodeColor,
-  getLinkGradientColors
-} from './utils';
+// Utilities and helpers
+export * from './utils';
+
+// Types
+export * from './types';
+
+// Default export
+export { default } from './core/SankeyChart';

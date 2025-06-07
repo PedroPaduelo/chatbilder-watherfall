@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Download, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import type { SankeyData, SankeyNode, SankeyLink } from '../types';
-import { processRawSankeyData } from '../utils';
+import { generateSampleSankeyData } from '../utils';
 
 interface SankeyImportProps {
   onDataImport: (data: SankeyData) => void;

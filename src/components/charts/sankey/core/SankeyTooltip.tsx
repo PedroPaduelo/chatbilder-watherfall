@@ -1,25 +1,38 @@
 import React from 'react';
 import type { SankeyTooltipProps } from '../types';
 
-const SankeyTooltip: React.FC<SankeyTooltipProps> = ({ tooltip }) => {
-  if (!tooltip.show) return null;
+const SankeyTooltip: React.FC<SankeyTooltipProps> = ({
+  tooltip,
+  settings
+}) => {
+  if (!tooltip.show || !settings.enabled) {
+    return null;
+  }
 
   return (
     <div
-      className="absolute z-50 bg-gray-800 text-white text-xs rounded-lg shadow-lg pointer-events-none"
+      className="absolute pointer-events-none z-50"
       style={{
         left: tooltip.x,
         top: tooltip.y,
+        backgroundColor: settings.style.backgroundColor,
+        border: `${settings.style.borderWidth}px solid ${settings.style.borderColor}`,
+        borderRadius: settings.style.borderRadius,
+        padding: settings.style.padding,
+        fontSize: settings.style.fontSize,
+        color: settings.style.fontColor,
+        maxWidth: settings.style.maxWidth,
+        boxShadow: settings.style.shadow ? '0 4px 12px rgba(0, 0, 0, 0.15)' : 'none',
         transform: 'translate(-50%, -100%)',
-        maxWidth: '280px',
-        padding: '8px 12px'
+        transformOrigin: 'bottom center'
       }}
     >
-      <div className="whitespace-pre-line leading-relaxed">
-        {tooltip.content}
-      </div>
+      <div 
+        dangerouslySetInnerHTML={{ __html: tooltip.content }}
+        className="whitespace-nowrap"
+      />
       
-      {/* Seta do tooltip */}
+      {/* Tooltip arrow */}
       <div
         className="absolute top-full left-1/2 transform -translate-x-1/2"
         style={{
@@ -27,7 +40,7 @@ const SankeyTooltip: React.FC<SankeyTooltipProps> = ({ tooltip }) => {
           height: 0,
           borderLeft: '6px solid transparent',
           borderRight: '6px solid transparent',
-          borderTop: '6px solid #1f2937'
+          borderTop: `6px solid ${settings.style.backgroundColor}`
         }}
       />
     </div>

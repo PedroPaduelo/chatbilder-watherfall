@@ -1,113 +1,44 @@
 import React from 'react';
 import type { SankeyLinksProps } from '../types';
-import { getLinkGradientColors, sankeyColorPalettes } from '../utils';
 
 const SankeyLinks: React.FC<SankeyLinksProps> = ({
   links,
   settings,
-  hoveredElement,
+  selection,
+  onLinkClick,
   onLinkHover,
-  onMouseLeave
+  getLinkColor
 }) => {
-  // Helper function to get node color with proper fallbacks
-  const getNodeColorSafe = (idx: number): string => {
-    // Use custom colors if available and valid
-    if (settings.customColors && settings.customColors.length > 0) {
-      return settings.customColors[idx % settings.customColors.length];
-    }
-    
-    // Fall back to palette based on color scheme
-    const paletteMap = {
-      default: sankeyColorPalettes.default,
-      categorical: sankeyColorPalettes.categorical,
-      gradient: sankeyColorPalettes.gradient
-    };
-    const palette = paletteMap[settings.colorScheme as keyof typeof paletteMap] || sankeyColorPalettes.default;
-    return palette[idx % palette.length];
-  };
-
-  // Criar gradientes únicos para cada link se necessário
-  const gradients = links.map((link, index) => {
-    if (!settings.linkGradient) return null;
-    
-    const sourceIndex = link.sourceNode.index;
-    const targetIndex = link.targetNode.index;
-    const { sourceColor, targetColor } = getLinkGradientColors(
-      link, 
-      settings, 
-      getNodeColorSafe,
-      sourceIndex,
-      targetIndex
-    );
-    
-    const gradientId = `gradient-${index}`;
-    
-    return (
-      <linearGradient key={gradientId} id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor={sourceColor} />
-        <stop offset="100%" stopColor={targetColor} />
-      </linearGradient>
-    );
-  });
-
   return (
-    <>
-      {/* Definições de gradientes */}
-      {settings.linkGradient && (
-        <defs>
-          {gradients}
-        </defs>
-      )}
-      
-      <g className="sankey-links">
-        {links.map((link, index) => {
-          const linkId = `link-${link.sourceNode.id}-${link.targetNode.id}`;
-          const isHovered = hoveredElement === linkId;
-          const isConnectedToHoveredNode = hoveredElement && (
-            hoveredElement === `node-${link.sourceNode.id}` ||
-            hoveredElement === `node-${link.targetNode.id}`
-          );
-          
-          const linkOpacity = isHovered ? settings.linkHoverOpacity :
-            hoveredElement && !isConnectedToHoveredNode ? settings.linkOpacity * 0.2 :
-            settings.linkOpacity;
+    <g className="sankey-links">
+      {links.map((link) => {
+        const linkId = `${link.source}-${link.target}`;
+        const isSelected = selection.type === 'link' && selection.id === linkId;
+        const isHighlighted = selection.highlighted.includes(link.sourceNode.id) || 
+                             selection.highlighted.includes(link.targetNode.id);
+        const opacity = isSelected || isHighlighted 
+          ? settings.colors.opacity.hover.link 
+          : settings.colors.opacity.link;
 
-          // Determinar cor do link
-          let linkFill: string;
-          if (settings.linkGradient && settings.linkColorMode === 'gradient') {
-            linkFill = `url(#gradient-${index})`;
-          } else {
-            const sourceIndex = link.sourceNode.index;
-            const targetIndex = link.targetNode.index;
-            const { sourceColor } = getLinkGradientColors(
-              link, 
-              settings, 
-              getNodeColorSafe,
-              sourceIndex,
-              targetIndex
-            );
-            linkFill = sourceColor;
-          }
-
-          return (
-            <path
-              key={linkId}
-              d={link.path}
-              fill={linkFill}
-              opacity={linkOpacity}
-              stroke="none"
-              style={{
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                filter: isHovered ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' : 'none'
-              }}
-              onMouseEnter={(e) => onLinkHover(e, link)}
-              onMouseLeave={onMouseLeave}
-            />
-          );
-        })}
-      </g>
-    </>
+        return (
+          <path
+            key={linkId}
+            d={link.path}
+            fill={getLinkColor(link)}
+            stroke="none"
+            opacity={opacity}
+            strokeWidth={link.width}
+            className="cursor-pointer transition-all duration-200"
+            onMouseEnter={(e) => onLinkHover(link, e)}
+            onMouseLeave={() => onLinkHover(null)}
+            onClick={(e) => onLinkClick(link, e)}
+            role={settings.accessibility.enabled ? "button" : undefined}
+            aria-label={settings.accessibility.enabled ? settings.accessibility.labels.link(link) : undefined}
+            tabIndex={settings.accessibility.enabled ? 0 : undefined}
+          />
+        );
+      })}
+    </g>
   );
 };
 

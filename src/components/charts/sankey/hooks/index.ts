@@ -1,355 +1,493 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { 
   SankeyData, 
   SankeySettings, 
   ProcessedSankeyNode, 
-  ProcessedSankeyLink 
+  ProcessedSankeyLink,
+  SankeySelection,
+  SankeyTransform,
+  SankeyTooltip
 } from '../types';
+import { 
+  processSankeyData, 
+  validateSankeyData, 
+  calculateSankeyMetrics,
+  defaultSankeySettings 
+} from '../utils';
 
-export const useSankeyData = (
-  data: SankeyData, 
-  chartWidth: number, 
-  chartHeight: number
-) => {
+// ============================================================================
+// DATA PROCESSING HOOK
+// ============================================================================
+
+export function useSankeyData(
+  data: SankeyData,
+  width: number,
+  height: number,
+  settings: SankeySettings = defaultSankeySettings
+) {
   return useMemo(() => {
-    if (!data.nodes.length || !data.links.length) {
+    // Validate data first
+    const validation = validateSankeyData(data);
+    if (!validation.isValid) {
+      console.warn('Sankey data validation failed:', validation.errors);
       return { nodes: [], links: [] };
     }
 
-    // Criar mapa de nós
-    const nodeMap = new Map<string, ProcessedSankeyNode>();
+    // Process data for rendering
+    return processSankeyData(data, width, height, settings);
+  }, [data, width, height, settings]);
+}
+
+// ============================================================================
+// SELECTION MANAGEMENT HOOK
+// ============================================================================
+
+export function useSankeySelection() {
+  const [selection, setSelection] = useState<SankeySelection>({
+    type: null,
+    id: null,
+    highlighted: []
+  });
+
+  const selectNode = useCallback((nodeId: string) => {
+    setSelection(prev => ({
+      type: 'node',
+      id: nodeId,
+      highlighted: prev.id === nodeId ? [] : [nodeId]
+    }));
+  }, []);
+
+  const selectLink = useCallback((linkId: string) => {
+    setSelection(prev => ({
+      type: 'link',
+      id: linkId,
+      highlighted: prev.id === linkId ? [] : [linkId]
+    }));
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelection({
+      type: null,
+      id: null,
+      highlighted: []
+    });
+  }, []);
+
+  const highlightConnected = useCallback((
+    nodeId: string, 
+    nodes: ProcessedSankeyNode[], 
+    _links: ProcessedSankeyLink[]
+  ) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    const connectedNodes = new Set<string>([nodeId]);
+    const connectedLinks = new Set<string>();
+
+    // Add source and target nodes
+    node.sourceLinks.forEach(link => {
+      connectedNodes.add(link.targetNode.id);
+      connectedLinks.add(`${link.source}-${link.target}`);
+    });
+
+    node.targetLinks.forEach(link => {
+      connectedNodes.add(link.sourceNode.id);
+      connectedLinks.add(`${link.source}-${link.target}`);
+    });
+
+    setSelection({
+      type: 'node',
+      id: nodeId,
+      highlighted: Array.from(connectedNodes)
+    });
+  }, []);
+
+  return {
+    selection,
+    selectNode,
+    selectLink,
+    clearSelection,
+    highlightConnected
+  };
+}
+
+// ============================================================================
+// TRANSFORM/ZOOM/PAN HOOK
+// ============================================================================
+
+export function useSankeyTransform() {
+  const [transform, setTransform] = useState<SankeyTransform>({
+    x: 0,
+    y: 0,
+    scale: 1
+  });
+
+  const pan = useCallback((deltaX: number, deltaY: number) => {
+    setTransform(prev => ({
+      ...prev,
+      x: prev.x + deltaX,
+      y: prev.y + deltaY
+    }));
+  }, []);
+
+  const zoom = useCallback((scale: number, centerX?: number, centerY?: number) => {
+    setTransform(prev => {
+      const newScale = Math.max(0.1, Math.min(10, scale));
+      
+      if (centerX !== undefined && centerY !== undefined) {
+        // Zoom towards a specific point
+        const scaleRatio = newScale / prev.scale;
+        return {
+          x: centerX - (centerX - prev.x) * scaleRatio,
+          y: centerY - (centerY - prev.y) * scaleRatio,
+          scale: newScale
+        };
+      }
+      
+      return { ...prev, scale: newScale };
+    });
+  }, []);
+
+  const reset = useCallback(() => {
+    setTransform({ x: 0, y: 0, scale: 1 });
+  }, []);
+
+  const fitToView = useCallback((
+    nodes: ProcessedSankeyNode[],
+    containerWidth: number,
+    containerHeight: number,
+    padding = 50
+  ) => {
+    if (nodes.length === 0) return;
+
+    const bounds = nodes.reduce(
+      (acc, node) => ({
+        minX: Math.min(acc.minX, node.x),
+        maxX: Math.max(acc.maxX, node.x + node.width),
+        minY: Math.min(acc.minY, node.y),
+        maxY: Math.max(acc.maxY, node.y + node.height)
+      }),
+      { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity }
+    );
+
+    const contentWidth = bounds.maxX - bounds.minX;
+    const contentHeight = bounds.maxY - bounds.minY;
     
-    data.nodes.forEach((node, index) => {
-      nodeMap.set(node.id, {
-        ...node,
-        x: 0,
-        y: 0,
-        width: 15,
-        height: 0,
-        value: 0,
-        level: 0,
-        sourceLinks: [],
-        targetLinks: [],
-        index,
-      });
+    const scaleX = (containerWidth - padding * 2) / contentWidth;
+    const scaleY = (containerHeight - padding * 2) / contentHeight;
+    const scale = Math.min(scaleX, scaleY, 1);
+
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
+    
+    const targetX = containerWidth / 2 - centerX * scale;
+    const targetY = containerHeight / 2 - centerY * scale;
+
+    setTransform({ x: targetX, y: targetY, scale });
+  }, []);
+
+  return {
+    transform,
+    setTransform,
+    pan,
+    zoom,
+    reset,
+    fitToView
+  };
+}
+
+// ============================================================================
+// TOOLTIP MANAGEMENT HOOK
+// ============================================================================
+
+export function useSankeyTooltip() {
+  const [tooltip, setTooltip] = useState<SankeyTooltip>({
+    show: false,
+    x: 0,
+    y: 0,
+    content: '',
+    type: 'node'
+  });
+
+  const showTooltip = useCallback((
+    content: string,
+    x: number,
+    y: number,
+    type: 'node' | 'link' = 'node',
+    data?: any
+  ) => {
+    setTooltip({
+      show: true,
+      x,
+      y,
+      content,
+      type,
+      data
     });
+  }, []);
 
-    const nodes = Array.from(nodeMap.values());
-    const links: ProcessedSankeyLink[] = [];
+  const hideTooltip = useCallback(() => {
+    setTooltip(prev => ({ ...prev, show: false }));
+  }, []);
 
-    // Processar links
-    data.links.forEach(link => {
-      const sourceNode = nodeMap.get(link.source);
-      const targetNode = nodeMap.get(link.target);
+  const updateTooltipPosition = useCallback((x: number, y: number) => {
+    setTooltip(prev => ({ ...prev, x, y }));
+  }, []);
+
+  return {
+    tooltip,
+    showTooltip,
+    hideTooltip,
+    updateTooltipPosition
+  };
+}
+
+// ============================================================================
+// ANIMATION HOOK
+// ============================================================================
+
+export function useSankeyAnimation(settings: SankeySettings) {
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animationProgress, setAnimationProgress] = useState(0);
+
+  const startAnimation = useCallback((duration?: number) => {
+    if (!settings.animation.enabled) return;
+
+    setIsAnimating(true);
+    setAnimationProgress(0);
+
+    const animDuration = duration || settings.animation.duration;
+    const startTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / animDuration, 1);
       
-      if (!sourceNode || !targetNode) return;
+      // Apply easing
+      let easedProgress = progress;
+      switch (settings.animation.easing) {
+        case 'easeInOut':
+          easedProgress = progress < 0.5 
+            ? 2 * progress * progress 
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+          break;
+        case 'easeIn':
+          easedProgress = progress * progress;
+          break;
+        case 'easeOut':
+          easedProgress = 1 - (1 - progress) * (1 - progress);
+          break;
+        case 'bounce':
+          easedProgress = progress < 0.5
+            ? 2 * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+          break;
+      }
 
-      const processedLink: ProcessedSankeyLink = {
-        ...link,
-        sourceNode,
-        targetNode,
-        sy0: 0,
-        sy1: 0,
-        ty0: 0,
-        ty1: 0,
-        width: 0,
-        path: '',
-      };
+      setAnimationProgress(easedProgress);
 
-      sourceNode.sourceLinks.push(processedLink);
-      targetNode.targetLinks.push(processedLink);
-      links.push(processedLink);
-    });
-
-    // Calcular valores dos nós
-    nodes.forEach(node => {
-      const inValue = node.targetLinks.reduce((sum, link) => sum + link.value, 0);
-      const outValue = node.sourceLinks.reduce((sum, link) => sum + link.value, 0);
-      node.value = Math.max(inValue, outValue) || 1;
-    });
-
-    // Calcular níveis (colunas) dos nós com detecção de ciclos
-    const calculateLevels = () => {
-      const levels = new Map<string, number>();
-      const visiting = new Set<string>();
-      const visited = new Set<string>();
-      
-      const visit = (nodeId: string): number => {
-        if (visiting.has(nodeId)) {
-          // Ciclo detectado - usar nível baseado na posição no array
-          console.warn(`Cycle detected involving node: ${nodeId}`);
-          const node = nodeMap.get(nodeId)!;
-          return node.index % 3; // Distribuir em 3 níveis como fallback
-        }
-        
-        if (visited.has(nodeId)) {
-          return levels.get(nodeId) || 0;
-        }
-        
-        visiting.add(nodeId);
-        const node = nodeMap.get(nodeId)!;
-        
-        if (node.targetLinks.length === 0) {
-          levels.set(nodeId, 0);
-          visiting.delete(nodeId);
-          visited.add(nodeId);
-          return 0;
-        }
-        
-        let maxLevel = -1;
-        node.targetLinks.forEach(link => {
-          const sourceLevel = visit(link.source);
-          maxLevel = Math.max(maxLevel, sourceLevel);
-        });
-        
-        const level = maxLevel + 1;
-        levels.set(nodeId, level);
-        visiting.delete(nodeId);
-        visited.add(nodeId);
-        return level;
-      };
-
-      nodes.forEach(node => visit(node.id));
-      return levels;
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setIsAnimating(false);
+      }
     };
 
-    const levels = calculateLevels();
-    nodes.forEach(node => {
-      node.level = levels.get(node.id) || 0;
-    });
+    requestAnimationFrame(animate);
+  }, [settings.animation.enabled, settings.animation.duration, settings.animation.easing]);
 
-    // Agrupar nós por nível
-    const nodesByLevel: ProcessedSankeyNode[][] = [];
-    const maxLevel = Math.max(...nodes.map(n => n.level));
-    
-    for (let i = 0; i <= maxLevel; i++) {
-      nodesByLevel[i] = nodes.filter(n => n.level === i);
+  return {
+    isAnimating,
+    animationProgress,
+    startAnimation
+  };
+}
+
+// ============================================================================
+// KEYBOARD NAVIGATION HOOK
+// ============================================================================
+
+export function useSankeyKeyboardNavigation(
+  nodes: ProcessedSankeyNode[],
+  _links: ProcessedSankeyLink[],
+  _selection: SankeySelection,
+  selectNode: (nodeId: string) => void,
+  _selectLink: (linkId: string) => void,
+  clearSelection: () => void
+) {
+  const [focusedIndex, setFocusedIndex] = useState(0);
+
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (!nodes.length) return;
+
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        event.preventDefault();
+        setFocusedIndex(prev => (prev + 1) % nodes.length);
+        selectNode(nodes[(focusedIndex + 1) % nodes.length].id);
+        break;
+        
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        event.preventDefault();
+        const prevIndex = focusedIndex === 0 ? nodes.length - 1 : focusedIndex - 1;
+        setFocusedIndex(prevIndex);
+        selectNode(nodes[prevIndex].id);
+        break;
+        
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        if (focusedIndex < nodes.length) {
+          selectNode(nodes[focusedIndex].id);
+        }
+        break;
+        
+      case 'Escape':
+        event.preventDefault();
+        clearSelection();
+        setFocusedIndex(0);
+        break;
     }
+  }, [nodes, focusedIndex, selectNode, clearSelection]);
 
-    // Calcular escala de altura
-    const totalValue = Math.max(...nodes.map(n => n.value));
-    const heightScale = chartHeight / (totalValue * 1.2);
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
-    // Calcular alturas dos nós
-    nodes.forEach(node => {
-      node.height = Math.max(12, node.value * heightScale);
+  return { focusedIndex };
+}
+
+// ============================================================================
+// PERFORMANCE MONITORING HOOK
+// ============================================================================
+
+export function useSankeyPerformance() {
+  const [metrics, setMetrics] = useState({
+    renderTime: 0,
+    nodeCount: 0,
+    linkCount: 0,
+    lastUpdate: Date.now()
+  });
+
+  const startRender = useCallback(() => {
+    return performance.now();
+  }, []);
+
+  const endRender = useCallback((startTime: number, nodeCount: number, linkCount: number) => {
+    const renderTime = performance.now() - startTime;
+    setMetrics({
+      renderTime,
+      nodeCount,
+      linkCount,
+      lastUpdate: Date.now()
     });
+  }, []);
 
-    // Posicionar nós horizontalmente - espaçamento uniforme
-    const levelWidth = chartWidth / (maxLevel + 1);
-    nodesByLevel.forEach((levelNodes, level) => {
-      const x = level * levelWidth;
-      levelNodes.forEach(node => {
-        node.x = x;
-      });
-    });
+  return {
+    metrics,
+    startRender,
+    endRender
+  };
+}
 
-    return { nodes, links, nodesByLevel, maxLevel };
-  }, [data, chartWidth, chartHeight]);
-};
+// ============================================================================
+// RESPONSIVE HOOK
+// ============================================================================
 
-export const useSankeyLayout = (
-  processedData: { 
-    nodes: ProcessedSankeyNode[]; 
-    links: ProcessedSankeyLink[]; 
-    nodesByLevel: ProcessedSankeyNode[][]; 
-    maxLevel: number; 
-  },
-  chartHeight: number,
-  settings: SankeySettings
-) => {
-  return useMemo(() => {
-    if (!processedData.nodes.length) return processedData;
+export function useSankeyResponsive(settings: SankeySettings) {
+  const [breakpoint, setBreakpoint] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [isMobile, setIsMobile] = useState(false);
 
-    const { nodes, links, nodesByLevel } = processedData;
-
-    // Algoritmo de posicionamento vertical com espaçamento
-    const positionNodesVertically = () => {
-      nodesByLevel.forEach(levelNodes => {
-        // Ordenar nós por valor para garantir consistência
-        levelNodes.sort((a, b) => b.value - a.value);
-        
-        // Calcular espaço total necessário
-        const totalNodeHeight = levelNodes.reduce((sum, node) => sum + node.height, 0);
-        
-        // Usar configurações do settings
-        const totalSpacingNeeded = chartHeight * settings.spacingRatio;
-        const spacingPerNode = levelNodes.length > 1 ? totalSpacingNeeded / (levelNodes.length - 1) : 0;
-        
-        // Calcular altura ajustada para os nós
-        const nodeHeightRatio = 1 - settings.spacingRatio;
-        const nodeScale = nodeHeightRatio * chartHeight / totalNodeHeight;
-        
-        // Aplicar escala aos nós
-        levelNodes.forEach(node => {
-          node.height = Math.max(settings.nodeMinHeight, node.height * nodeScale);
-        });
-        
-        // Distribuir nós com espaçamento
-        let currentY = 0;
-        levelNodes.forEach((node, i) => {
-          node.y = currentY;
-          currentY += node.height + (i < levelNodes.length - 1 ? spacingPerNode : 0);
-        });
-      });
-    };
-    
-    positionNodesVertically();
-
-    // Otimizar posições para minimizar cruzamentos de links
-    const optimizeNodePositions = () => {
-      const damping = 0.15;
+  useEffect(() => {
+    const checkBreakpoint = () => {
+      const width = window.innerWidth;
+      const { mobile, tablet } = settings.display.responsiveBreakpoints;
       
-      for (let i = 0; i < settings.iterations; i++) {
-        // Ajustar nós com base nas posições dos nós conectados
-        for (let level = 0; level <= processedData.maxLevel; level++) {
-          nodesByLevel[level].forEach(node => {
-            let idealY = 0;
-            let totalWeight = 0;
-            
-            // Considerar links de entrada
-            node.targetLinks.forEach(link => {
-              const sourceY = link.sourceNode.y + link.sourceNode.height / 2;
-              idealY += sourceY * link.value;
-              totalWeight += link.value;
-            });
-            
-            // Considerar links de saída
-            node.sourceLinks.forEach(link => {
-              const targetY = link.targetNode.y + link.targetNode.height / 2;
-              idealY += targetY * link.value;
-              totalWeight += link.value;
-            });
-            
-            if (totalWeight > 0) {
-              idealY = idealY / totalWeight - node.height / 2;
-              node.y = node.y * (1 - damping) + idealY * damping;
-            }
-          });
-        }
-        
-        // Preservar espaçamento após cada iteração
-        preserveSpacing();
+      if (width < mobile) {
+        setBreakpoint('mobile');
+        setIsMobile(true);
+      } else if (width < tablet) {
+        setBreakpoint('tablet');
+        setIsMobile(false);
+      } else {
+        setBreakpoint('desktop');
+        setIsMobile(false);
       }
     };
+
+    checkBreakpoint();
+    window.addEventListener('resize', checkBreakpoint);
+    return () => window.removeEventListener('resize', checkBreakpoint);
+  }, [settings.display.responsiveBreakpoints]);
+
+  return { breakpoint, isMobile };
+}
+
+// ============================================================================
+// MAIN SANKEY HOOK
+// ============================================================================
+
+export function useSankey(
+  data: SankeyData,
+  settings: SankeySettings,
+  width: number,
+  height: number
+) {
+  // Process data
+  const processedData = useSankeyData(data, width, height, settings);
+  
+  // Selection management
+  const selectionHook = useSankeySelection();
+  
+  // Transform management
+  const transformHook = useSankeyTransform();
+  
+  // Tooltip management
+  const tooltipHook = useSankeyTooltip();
+  
+  // Animation
+  const animationHook = useSankeyAnimation(settings);
+  
+  // Performance monitoring
+  const performanceHook = useSankeyPerformance();
+  
+  // Responsive behavior
+  const responsiveHook = useSankeyResponsive(settings);
+
+  // Calculate metrics
+  const metrics = useMemo(() => calculateSankeyMetrics(data), [data]);
+
+  // Validation
+  const validation = useMemo(() => validateSankeyData(data), [data]);
+
+  return {
+    // Processed data
+    nodes: processedData.nodes,
+    links: processedData.links,
     
-    const preserveSpacing = () => {
-      nodesByLevel.forEach(levelNodes => {
-        // Ordenar por posição Y
-        levelNodes.sort((a, b) => a.y - b.y);
-        
-        // Garantir espaçamento mínimo
-        for (let i = 1; i < levelNodes.length; i++) {
-          const current = levelNodes[i];
-          const previous = levelNodes[i - 1];
-          const minY = previous.y + previous.height + settings.minSpacing;
-          
-          if (current.y < minY) {
-            current.y = minY;
-          }
-        }
-        
-        // Ajustar para caber dentro dos limites
-        fitNodesToChart(levelNodes);
-      });
-    };
+    // Selection
+    ...selectionHook,
     
-    const fitNodesToChart = (nodes: ProcessedSankeyNode[]) => {
-      if (nodes.length <= 1) return;
-      
-      const firstNode = nodes[0];
-      const lastNode = nodes[nodes.length - 1];
-      const totalHeight = lastNode.y + lastNode.height - firstNode.y;
-      
-      if (totalHeight > chartHeight) {
-        // Comprimir proporcionalmente
-        const compressionFactor = chartHeight / totalHeight;
-        const baseY = firstNode.y;
-        
-        nodes.forEach((node, i) => {
-          if (i === 0) return;
-          node.y = baseY + (node.y - baseY) * compressionFactor;
-        });
-      } else if (totalHeight < chartHeight * settings.compressionThreshold) {
-        // Esticar proporcionalmente se estiver usando menos espaço
-        const stretchFactor = chartHeight * settings.compressionThreshold / totalHeight;
-        const baseY = firstNode.y;
-        
-        nodes.forEach((node, i) => {
-          if (i === 0) return;
-          node.y = baseY + (node.y - baseY) * stretchFactor;
-        });
-      }
-    };
+    // Transform
+    ...transformHook,
     
-    // Aplicar otimização
-    optimizeNodePositions();
+    // Tooltip
+    ...tooltipHook,
     
-    // Calcular posições e dimensões dos links
-    const calculateLinkPositions = () => {
-      // Para cada nó, calcular as posições dos links
-      nodes.forEach(node => {
-        // Ordenar links para minimizar cruzamentos
-        node.sourceLinks.sort((a, b) => 
-          a.targetNode.y + a.targetNode.height / 2 - (b.targetNode.y + b.targetNode.height / 2)
-        );
-        
-        node.targetLinks.sort((a, b) => 
-          a.sourceNode.y + a.sourceNode.height / 2 - (b.sourceNode.y + b.sourceNode.height / 2)
-        );
-        
-        // Calcular larguras dos links de saída
-        if (node.sourceLinks.length > 0) {
-          const totalValue = node.sourceLinks.reduce((sum, link) => sum + link.value, 0);
-          const linkScale = node.height / totalValue;
-          
-          let y = node.y;
-          node.sourceLinks.forEach(link => {
-            const linkHeight = link.value * linkScale;
-            link.width = linkHeight;
-            link.sy0 = y;
-            link.sy1 = y + linkHeight;
-            y += linkHeight;
-          });
-        }
-        
-        // Calcular larguras dos links de entrada
-        if (node.targetLinks.length > 0) {
-          const totalValue = node.targetLinks.reduce((sum, link) => sum + link.value, 0);
-          const linkScale = node.height / totalValue;
-          
-          let y = node.y;
-          node.targetLinks.forEach(link => {
-            const linkHeight = link.value * linkScale;
-            link.width = linkHeight;
-            link.ty0 = y;
-            link.ty1 = y + linkHeight;
-            y += linkHeight;
-          });
-        }
-      });
-    };
+    // Animation
+    ...animationHook,
     
-    calculateLinkPositions();
+    // Performance
+    ...performanceHook,
     
-    // Gerar caminhos para os links usando curvas de Bézier
-    links.forEach(link => {
-      const x0 = link.sourceNode.x + link.sourceNode.width;
-      const x1 = link.targetNode.x;
-      
-      // Calcular pontos de controle para curvas suaves
-      const dx = Math.abs(x1 - x0) * settings.linkCurvature;
-      
-      // Usar curvas de Bézier para criar caminhos suaves
-      link.path = `
-        M ${x0} ${link.sy0}
-        C ${x0 + dx} ${link.sy0}, ${x1 - dx} ${link.ty0}, ${x1} ${link.ty0}
-        L ${x1} ${link.ty1}
-        C ${x1 - dx} ${link.ty1}, ${x0 + dx} ${link.sy1}, ${x0} ${link.sy1}
-        Z
-      `;
-    });
+    // Responsive
+    ...responsiveHook,
     
-    return { nodes, links };
-  }, [processedData, chartHeight, settings]);
-};
+    // Metrics and validation
+    metrics,
+    validation
+  };
+}

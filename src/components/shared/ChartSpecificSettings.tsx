@@ -35,7 +35,10 @@ const ChartSpecificSettings: React.FC<ChartSpecificSettingsProps> = ({
 
   // Handler específico para configurações do Sankey
   const handleSankeySettingsChange = (sankeySettings: SankeySettings) => {
-    const newSettings = { ...localSettings, sankeySettings };
+    const newSettings = { 
+      ...localSettings, 
+      sankeySettings: sankeySettings as any // Type assertion for compatibility
+    };
     setLocalSettings(newSettings);
     onSettingsChange(newSettings);
     
@@ -64,7 +67,7 @@ const ChartSpecificSettings: React.FC<ChartSpecificSettingsProps> = ({
     const defaultSettings = ChartSettingsManager.resetToDefaults(chartType);
     // Para Sankey, garantir que as configurações específicas sejam incluídas
     if (chartType === 'sankey') {
-      defaultSettings.sankeySettings = defaultSankeySettings;
+      defaultSettings.sankeySettings = defaultSankeySettings as any;
     }
     setLocalSettings(defaultSettings);
     onSettingsChange(defaultSettings);
@@ -211,6 +214,8 @@ const ChartSpecificSettings: React.FC<ChartSpecificSettingsProps> = ({
               <SankeyChartConfig
                 settings={(localSettings.sankeySettings as SankeySettings) || defaultSankeySettings}
                 onSettingsChange={handleSankeySettingsChange}
+                onReset={resetToDefaults}
+                onPresetApply={() => {}}
               />
             </div>
           ) : (
