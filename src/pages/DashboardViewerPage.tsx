@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Edit, Share2, Copy, Trash2, Eye, Grid, Maximize2 } from 'lucide-react';
-import { WaterfallChart } from '../components/waterfall';
+import { WaterfallChart } from '../components/charts/waterfall';
 import { useDashboards } from '../hooks/useDashboards';
 import { useNotifications } from '../hooks/useNotifications';
 import { databaseService, Dashboard } from '../services/databaseService';

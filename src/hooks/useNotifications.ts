@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Notification, NotificationType } from '../components/Notification';
+import type { Notification, NotificationType } from '../components/ui/Notification';
 import { generateId } from '../utils/helpers';
 import { UI_CONSTANTS } from '../utils/constants';
 

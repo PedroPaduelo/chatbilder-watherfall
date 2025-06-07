@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Grid, Eye } from 'lucide-react';
-import { DashboardBuilder } from '../components/DashboardBuilder';
+import { DashboardBuilder } from '../components/dashboard/DashboardBuilder';
 import { useDashboards } from '../hooks/useDashboards';
 // import { useSavedCharts } from '../hooks/useSavedCharts';
 import { useNotifications } from '../hooks/useNotifications';

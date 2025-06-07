@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SavedChartsManager } from '../components/SavedChartsManager';
+import { SavedChartsManager } from '../components/shared/SavedChartsManager';
 import { SavedChart } from '../services/databaseService';
 import { useNotifications } from '../hooks/useNotifications';
 

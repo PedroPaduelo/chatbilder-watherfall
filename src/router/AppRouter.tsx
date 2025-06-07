@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import Layout from '../components/Layout';
+import Layout from '../components/layout/Layout';
 import HomePage from '../pages/HomePage';
 import ChartsPage from '../pages/ChartsPage';
 import ChartCreatorPage from '../pages/ChartCreatorPage';

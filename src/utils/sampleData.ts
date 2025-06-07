@@ -1,5 +1,5 @@
 import type { DataRow, ChartType, SankeyData } from '../types';
-import { generateSampleWaterfallData } from '../components/waterfall';
+import { generateSampleWaterfallData } from '../components/charts/waterfall';
 
 // Dados de exemplo para Waterfall Chart - usando gerador modular
 export const waterfallSampleData: DataRow[] = generateSampleWaterfallData();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Edit, Share2, Download, Copy, Trash2 } from 'lucide-react';
-import UniversalChartRenderer from '../components/UniversalChartRenderer';
+import UniversalChartRenderer from '../components/charts/UniversalChartRenderer';
 import { useSavedCharts } from '../hooks/useSavedCharts';
 import { useNotifications } from '../hooks/useNotifications';
 import { useFileOperations } from '../hooks/useFileOperations';

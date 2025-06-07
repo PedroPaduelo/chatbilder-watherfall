@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DashboardsManager } from '../components/DashboardsManager';
+import { DashboardsManager } from '../components/dashboard/DashboardsManager';
 import { Dashboard } from '../services/databaseService';
 import { useNotifications } from '../hooks/useNotifications';
 
