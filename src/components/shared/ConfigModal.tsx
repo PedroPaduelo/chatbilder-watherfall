@@ -1,6 +1,6 @@
 import React from 'react';
 import Modal from '../ui/Modal';
-import SettingsPanel from './SettingsPanel';
+import NewSettingsPanel from './NewSettingsPanel';
 import type { ChartSettings, ChartType } from '../../types';
 
 interface ConfigModalProps {
@@ -18,14 +18,25 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
   onSettingsChange,
   chartType
 }) => {
+  const getChartTypeName = (type: ChartType): string => {
+    const names = {
+      waterfall: 'Waterfall',
+      sankey: 'Sankey',
+      'stacked-bar': 'Stacked Bar',
+      line: 'Line Chart',
+      area: 'Area Chart'
+    };
+    return names[type] || type;
+  };
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Configurações do Gráfico"
+      title={`Configurações - ${getChartTypeName(chartType)}`}
       maxWidth="4xl"
     >
-      <SettingsPanel 
+      <NewSettingsPanel 
         settings={settings} 
         onSettingsChange={onSettingsChange}
         chartType={chartType}

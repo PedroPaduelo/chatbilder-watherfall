@@ -123,10 +123,38 @@ const SankeyChartSettings: React.FC<SankeyChartSettingsProps> = ({
   const handleChange = (field: string, value: unknown) => {
     if (field.startsWith('sankeySettings.')) {
       const sankeyField = field.replace('sankeySettings.', '');
+      const currentSankeySettings = settings.sankeySettings || {
+        nodeWidth: 20,
+        nodeMinHeight: 10,
+        nodeSpacing: 10,
+        nodeBorderRadius: 0,
+        nodeOpacity: 1,
+        linkOpacity: 0.6,
+        linkCurvature: 0.5,
+        linkGradient: false,
+        linkHoverOpacity: 0.8,
+        iterations: 32,
+        spacingRatio: 0.1,
+        minSpacing: 5,
+        compressionThreshold: 0.8,
+        showNodeLabels: true,
+        showNodeValues: true,
+        showTooltips: true,
+        animationDuration: 500,
+        colorScheme: 'default' as const,
+        customColors: [],
+        linkColorMode: 'source' as const,
+        labelFontSize: 12,
+        labelFontWeight: 'normal' as const,
+        labelColor: '#333',
+        valueFontSize: 10,
+        valueColor: '#666'
+      };
+      
       onSettingsChange({
         ...settings,
         sankeySettings: {
-          ...settings.sankeySettings,
+          ...currentSankeySettings,
           [sankeyField]: value
         }
       });
@@ -136,7 +164,33 @@ const SankeyChartSettings: React.FC<SankeyChartSettingsProps> = ({
   };
 
   // Default values for Sankey settings
-  const sankeySettings = settings.sankeySettings || {};
+  const sankeySettings = settings.sankeySettings || {
+    nodeWidth: 20,
+    nodeMinHeight: 10,
+    nodeSpacing: 10,
+    nodeBorderRadius: 0,
+    nodeOpacity: 1,
+    linkOpacity: 0.6,
+    linkCurvature: 0.5,
+    linkGradient: false,
+    linkHoverOpacity: 0.8,
+    iterations: 32,
+    spacingRatio: 0.1,
+    minSpacing: 5,
+    compressionThreshold: 0.8,
+    showNodeLabels: true,
+    showNodeValues: true,
+    showTooltips: true,
+    animationDuration: 500,
+    colorScheme: 'default' as const,
+    customColors: [],
+    linkColorMode: 'source' as const,
+    labelFontSize: 12,
+    labelFontWeight: 'normal' as const,
+    labelColor: '#333',
+    valueFontSize: 10,
+    valueColor: '#666'
+  };
 
   return (
     <div className="space-y-4">
