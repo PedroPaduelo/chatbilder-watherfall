@@ -228,7 +228,6 @@ const ChartTypeSelector: React.FC<ChartTypeSelectorProps> = ({
                   {feature === 'gridlines' && 'Grade'}
                   {feature === 'axes' && 'Eixos'}
                   {feature === 'colors' && 'Cores'}
-                  {feature === 'annotations' && 'Anotações'}
                 </span>
               ))
             }

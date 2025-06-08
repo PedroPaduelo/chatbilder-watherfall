@@ -33,8 +33,18 @@ export function useSankeyData(
       return { nodes: [], links: [] };
     }
 
+    // Ensure settings has all required properties by merging with defaults
+    const completeSettings = {
+      ...defaultSankeySettings,
+      ...settings,
+      layout: {
+        ...defaultSankeySettings.layout,
+        ...settings.layout
+      }
+    };
+
     // Process data for rendering
-    return processSankeyData(data, width, height, settings);
+    return processSankeyData(data, width, height, completeSettings);
   }, [data, width, height, settings]);
 }
 

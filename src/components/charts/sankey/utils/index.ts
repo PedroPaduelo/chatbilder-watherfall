@@ -37,8 +37,8 @@ export const defaultSankeySettings: SankeySettings = {
     segmentLabelFontWeight: 'normal'
   },
   chartDimensions: {
-    width: 900,
-    height: 500,
+    width: 1000,
+    height: 600,
     autoResize: true,
     aspectRatio: 'auto'
   },
@@ -48,12 +48,12 @@ export const defaultSankeySettings: SankeySettings = {
   // Layout configuration
   layout: {
     algorithm: 'default',
-    nodeWidth: 15,
-    nodeMinHeight: 20,
+    nodeWidth: 40,
+    nodeMinHeight: 60,
     nodeSpacing: 30,
     levelSpacing: 150,
-    iterations: 6,
-    alpha: 0.99,
+    iterations: 15,
+    alpha: 0.8,
     alignType: 'justify',
     sortNodes: 'descending',
     levelDistribution: 'automatic'
@@ -63,11 +63,11 @@ export const defaultSankeySettings: SankeySettings = {
   nodeStyle: {
     fill: '#6366F1',
     stroke: '#4F46E5',
-    strokeWidth: 0,
-    opacity: 0.8,
-    borderRadius: 3,
+    strokeWidth: 1,
+    opacity: 0.9,
+    borderRadius: 4,
     gradient: {
-      enabled: false,
+      enabled: true,
       direction: 'vertical',
       stops: [
         { offset: 0, color: '#6366F1', opacity: 1 },
@@ -75,11 +75,11 @@ export const defaultSankeySettings: SankeySettings = {
       ]
     },
     shadow: {
-      enabled: false,
-      color: 'rgba(0, 0, 0, 0.1)',
-      blur: 4,
+      enabled: true,
+      color: 'rgba(0, 0, 0, 0.15)',
+      blur: 6,
       offsetX: 0,
-      offsetY: 2
+      offsetY: 3
     }
   },
 
@@ -87,8 +87,8 @@ export const defaultSankeySettings: SankeySettings = {
     fill: '#94A3B8',
     stroke: 'none',
     strokeWidth: 0,
-    opacity: 0.5,
-    curvature: 0.5,
+    opacity: 0.7,
+    curvature: 0.6,
     gradient: {
       enabled: true,
       fromSource: true
@@ -122,18 +122,18 @@ export const defaultSankeySettings: SankeySettings = {
     total: '#1F2937',
     mode: 'categorical',
     palette: [
-      '#6366F1', '#8B5CF6', '#EC4899', '#EF4444', '#F59E0B',
-      '#10B981', '#06B6D4', '#84CC16', '#F97316', '#6B7280'
+      '#2563EB', '#7C3AED', '#DC2626', '#059669', '#D97706',
+      '#7C2D12', '#1F2937', '#374151', '#4338CA', '#0891B2'
     ],
-    nodeColorBy: 'index',
+    nodeColorBy: 'level',
     linkColorBy: 'source',
     scaleType: 'linear',
     opacity: {
-      node: 0.8,
-      link: 0.5,
+      node: 0.9,
+      link: 0.7,
       hover: {
         node: 1.0,
-        link: 0.8
+        link: 0.9
       }
     }
   },
@@ -544,7 +544,8 @@ function calculateNodePositions(
   settings: SankeySettings
 ) {
   const { layout } = settings;
-  const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+  // Usar margens menores para maximizar espaço
+  const margin = { top: 20, right: 30, bottom: 20, left: 30 };
   const chartWidth = width - margin.left - margin.right;
   const chartHeight = height - margin.top - margin.bottom;
   
@@ -554,40 +555,73 @@ function calculateNodePositions(
     nodesByLevel[level] = nodes.filter(n => n.level === level);
   }
 
-  // Position nodes horizontally
-  nodesByLevel.forEach((levelNodes, level) => {
-    const x = level * (chartWidth / maxLevel);
-    levelNodes.forEach(node => {
-      node.x = x + margin.left;
-    });
+  // Calculate node values based on maximum flow through them
+  nodes.forEach(node => {
+    const inFlow = node.targetLinks.reduce((sum, link) => sum + link.value, 0);
+    const outFlow = node.sourceLinks.reduce((sum, link) => sum + link.value, 0);
+    node.value = Math.max(inFlow, outFlow, node.value || 0);
   });
 
-  // Calculate node heights based on values
-  const maxValue = Math.max(...nodes.map(n => n.value));
-  const valueScale = (chartHeight - (nodes.length * layout.nodeSpacing)) / maxValue;
+  // Calculate maximum flow per level to determine scale
+  const levelFlows = nodesByLevel.map(levelNodes => 
+    levelNodes.reduce((sum, node) => sum + node.value, 0)
+  );
+  const maxLevelFlow = Math.max(...levelFlows);
+  
+  // Use 85% of height for nodes, leaving space for spacing
+  const availableHeight = chartHeight * 0.85;
+  const flowScale = availableHeight / maxLevelFlow;
 
+  // Calculate node heights with minimum size guarantee
   nodes.forEach(node => {
-    node.height = Math.max(layout.nodeMinHeight, node.value * valueScale);
+    const scaledHeight = node.value * flowScale;
+    node.height = Math.max(layout.nodeMinHeight, scaledHeight);
     node.dy = node.height;
   });
 
-  // Position nodes vertically within each level
+  // Position nodes horizontally - distribute evenly across width
+  if (maxLevel > 0) {
+    const levelSpacing = chartWidth / (maxLevel + 1);
+    nodesByLevel.forEach((levelNodes, level) => {
+      const x = margin.left + (level + 0.5) * levelSpacing - layout.nodeWidth / 2;
+      levelNodes.forEach(node => {
+        node.x = Math.max(margin.left, Math.min(x, width - margin.right - layout.nodeWidth));
+      });
+    });
+  } else {
+    nodes.forEach(node => {
+      node.x = margin.left + chartWidth / 2 - layout.nodeWidth / 2;
+    });
+  }
+
+  // Position nodes vertically - maximize spacing
   nodesByLevel.forEach(levelNodes => {
-    const totalHeight = levelNodes.reduce((sum, n) => sum + n.height, 0);
-    const totalSpacing = (levelNodes.length - 1) * layout.nodeSpacing;
-    const startY = (chartHeight - totalHeight - totalSpacing) / 2 + margin.top;
+    if (levelNodes.length === 0) return;
     
-    let currentY = startY;
+    // Sort nodes by value (largest at top)
+    levelNodes.sort((a, b) => b.value - a.value);
+    
+    const totalNodeHeight = levelNodes.reduce((sum, n) => sum + n.height, 0);
+    const availableSpace = chartHeight - totalNodeHeight;
+    const spacing = Math.max(layout.nodeSpacing, availableSpace / (levelNodes.length + 1));
+    
+    let currentY = margin.top + spacing;
     levelNodes.forEach(node => {
       node.y = currentY;
-      currentY += node.height + layout.nodeSpacing;
+      currentY += node.height + spacing;
     });
   });
 
-  // Optimize positions with multiple iterations
+  // Enhanced relaxation with more aggressive positioning
   for (let i = 0; i < layout.iterations; i++) {
-    relaxLeftToRight(nodesByLevel, links, layout.alpha);
-    relaxRightToLeft(nodesByLevel, links, layout.alpha);
+    const alpha = layout.alpha * (1 - i / layout.iterations * 0.5); // Slower decay for more movement
+    relaxLeftToRight(nodesByLevel, links, alpha);
+    relaxRightToLeft(nodesByLevel, links, alpha);
+    
+    // Gentle collision resolution to not undo relaxation
+    if (i % 3 === 0) { // Only every 3rd iteration
+      resolveCollisions(nodesByLevel, layout.nodeSpacing);
+    }
   }
 }
 
@@ -635,62 +669,135 @@ function relaxRightToLeft(
   }
 }
 
+function resolveCollisions(nodesByLevel: ProcessedSankeyNode[][], minSpacing: number) {
+  nodesByLevel.forEach(levelNodes => {
+    if (levelNodes.length <= 1) return;
+    
+    // Sort by current Y position
+    levelNodes.sort((a, b) => a.y - b.y);
+    
+    // Resolve overlaps by pushing nodes down
+    for (let i = 1; i < levelNodes.length; i++) {
+      const current = levelNodes[i];
+      const previous = levelNodes[i - 1];
+      
+      const minY = previous.y + previous.height + minSpacing;
+      if (current.y < minY) {
+        current.y = minY;
+      }
+    }
+  });
+}
+
 function calculateLinkPaths(links: ProcessedSankeyLink[], settings: SankeySettings) {
   const { linkStyle } = settings;
   
-  // Calculate link widths and positions
+  // Group links by source and target nodes for proper stacking
+  const sourceGroups = new Map<string, ProcessedSankeyLink[]>();
+  const targetGroups = new Map<string, ProcessedSankeyLink[]>();
+  
+  links.forEach(link => {
+    const sourceId = link.sourceNode.id;
+    const targetId = link.targetNode.id;
+    
+    if (!sourceGroups.has(sourceId)) {
+      sourceGroups.set(sourceId, []);
+    }
+    if (!targetGroups.has(targetId)) {
+      targetGroups.set(targetId, []);
+    }
+    
+    sourceGroups.get(sourceId)!.push(link);
+    targetGroups.get(targetId)!.push(link);
+  });
+  
+  // Sort links within each group by value (largest first for better visual hierarchy)
+  sourceGroups.forEach(links => links.sort((a, b) => b.value - a.value));
+  targetGroups.forEach(links => links.sort((a, b) => b.value - a.value));
+  
+  // Calculate link widths proportional to their values - MUCH larger
   links.forEach(link => {
     const { sourceNode, targetNode } = link;
     
-    // Calculate link width based on value
-    const maxValue = Math.max(...links.map(l => l.value));
-    link.width = (link.value / maxValue) * Math.min(sourceNode.height, targetNode.height);
+    // Calculate proportional width based on node height and flow value
+    const flowRatio = link.value / Math.max(sourceNode.value, targetNode.value);
+    const nodeHeight = Math.min(sourceNode.height, targetNode.height);
     
-    // Calculate source and target positions
-    const sourceLinks = sourceNode.sourceLinks.sort((a, b) => a.value - b.value);
-    const targetLinks = targetNode.targetLinks.sort((a, b) => a.value - b.value);
+    // Make links much more prominent - use 98% of node height and ensure minimum width
+    const calculatedWidth = flowRatio * nodeHeight * 0.98;
+    link.width = Math.max(8, calculatedWidth); // Minimum 8px width for visibility
+  });
+  
+  // Position links on source nodes with center alignment
+  sourceGroups.forEach((nodeLinks) => {
+    const sourceNode = nodeLinks[0].sourceNode;
+    const totalLinkHeight = nodeLinks.reduce((sum, link) => sum + link.width, 0);
+    const startY = sourceNode.y + (sourceNode.height - totalLinkHeight) / 2;
     
-    let sourceY = sourceNode.y;
-    for (const l of sourceLinks) {
-      if (l === link) break;
-      sourceY += l.width;
-    }
+    let currentY = startY;
+    nodeLinks.forEach(link => {
+      link.sy0 = currentY;
+      link.sy1 = currentY + link.width;
+      currentY += link.width;
+    });
+  });
+  
+  // Position links on target nodes with center alignment
+  targetGroups.forEach((nodeLinks) => {
+    const targetNode = nodeLinks[0].targetNode;
+    const totalLinkHeight = nodeLinks.reduce((sum, link) => sum + link.width, 0);
+    const startY = targetNode.y + (targetNode.height - totalLinkHeight) / 2;
     
-    let targetY = targetNode.y;
-    for (const l of targetLinks) {
-      if (l === link) break;
-      targetY += l.width;
-    }
+    let currentY = startY;
+    nodeLinks.forEach(link => {
+      link.ty0 = currentY;
+      link.ty1 = currentY + link.width;
+      currentY += link.width;
+    });
+  });
+  
+  // Generate paths with professional curves
+  links.forEach(link => {
+    const { sourceNode, targetNode } = link;
     
-    link.sy0 = sourceY;
-    link.sy1 = sourceY + link.width;
-    link.ty0 = targetY;
-    link.ty1 = targetY + link.width;
+    const sourceX = sourceNode.x + sourceNode.width;
+    const targetX = targetNode.x;
     
-    // Generate SVG path
-    link.path = generateLinkPath(
-      sourceNode.x + sourceNode.width,
-      sourceY + link.width / 2,
-      targetNode.x,
-      targetY + link.width / 2,
+    // Create path for the full link shape (not just center line)
+    link.path = generateAdvancedLinkPath(
+      sourceX, link.sy0, link.sy1,
+      targetX, link.ty0, link.ty1,
       linkStyle.curvature
     );
   });
 }
 
-function generateLinkPath(
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
+function generateAdvancedLinkPath(
+  sourceX: number,
+  sourceY0: number,
+  sourceY1: number,
+  targetX: number,
+  targetY0: number,
+  targetY1: number,
   curvature: number
 ): string {
-  const xi = (x0 + x1) / 2;
-  const x2 = x0 + (xi - x0) * curvature;
-  const x3 = x1 - (x1 - xi) * curvature;
+  // Calculate control points for smooth bezier curves
+  const xi = (sourceX + targetX) / 2;
+  const x1 = sourceX + (xi - sourceX) * curvature;
+  const x2 = targetX - (targetX - xi) * curvature;
   
-  return `M${x0},${y0}C${x2},${y0} ${x3},${y1} ${x1},${y1}`;
+  // Create a path that represents the full width of the link
+  const path = [
+    `M${sourceX},${sourceY0}`, // Move to top of source
+    `C${x1},${sourceY0} ${x2},${targetY0} ${targetX},${targetY0}`, // Curve to top of target
+    `L${targetX},${targetY1}`, // Line down to bottom of target
+    `C${x2},${targetY1} ${x1},${sourceY1} ${sourceX},${sourceY1}`, // Curve back to bottom of source
+    'Z' // Close path
+  ].join(' ');
+  
+  return path;
 }
+
 
 // ============================================================================
 // COLOR UTILITIES

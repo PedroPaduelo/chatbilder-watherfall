@@ -2,14 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import UniversalChartRenderer from '../components/charts/UniversalChartRenderer';
-import ChartTypeSelector from '../components/charts/ChartTypeSelector';
-import DataEditor from '../components/data/DataEditor';
+import ChartTypeSelectorModal from '../components/shared/ChartTypeSelectorModal';
+import ExportModal from '../components/shared/ExportModal';
 import CSVImporter from '../components/data/CSVImporter';
+import UniversalImporter from '../components/data/UniversalImporter';
 import Toolbar from '../components/layout/Toolbar';
 import SaveViewModal from '../components/shared/SaveViewModal';
 import SavedViewsManager from '../components/shared/SavedViewsManager';
-import FilterPanel from '../components/data/FilterPanel';
-import AnnotationsManager, { type Annotation } from '../components/shared/AnnotationsManager';
 import { useFileOperations } from '../hooks/useFileOperations';
 import { useNotifications } from '../hooks/useNotifications';
 import { useSavedViews } from '../hooks/useSavedViews';
@@ -26,19 +25,20 @@ const ChartCreatorPage: React.FC = () => {
 
   // Core state
   const [data, setData] = useState<DataRow[]>(initialData);
-  const [filteredData, setFilteredData] = useState<DataRow[]>(initialData);
   const [sankeyData, setSankeyData] = useState<SankeyData>(getSankeySampleData());
   const [settings, setSettings] = useState<ChartSettings>(defaultSettings);
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [selectedChartType, setSelectedChartType] = useState<ChartType>('waterfall');
   const [chartName, setChartName] = useState('');
   const [chartDescription, setChartDescription] = useState('');
 
   // UI state
   const [showCSVImporter, setShowCSVImporter] = useState(false);
+  const [showUniversalImporter, setShowUniversalImporter] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showViewsManager, setShowViewsManager] = useState(false);
   const [showChartSettings, setShowChartSettings] = useState(false);
+  const [showChartTypeSelector, setShowChartTypeSelector] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Refs
@@ -49,7 +49,7 @@ const ChartCreatorPage: React.FC = () => {
   const { notifySuccess, notifyError } = useNotifications();
   const { saveView } = useSavedViews();
   const { saveChart, updateChart, getChart } = useSavedCharts();
-  const dimensions = useChartDimensions(filteredData, settings);
+  const dimensions = useChartDimensions(data, settings);
 
   const {
     handleFileUpload,
@@ -58,7 +58,7 @@ const ChartCreatorPage: React.FC = () => {
     exportAsJSON,
     exportAsHTML
   } = useFileOperations({
-    data: filteredData,
+    data: data,
     settings,
     onDataChange: setData,
     chartRef
@@ -79,14 +79,11 @@ const ChartCreatorPage: React.FC = () => {
             if (chart.chartType === 'sankey') {
               setSankeyData(chart.data as SankeyData);
               setData([]);
-              setFilteredData([]);
             } else {
               setData(chart.data as DataRow[]);
-              setFilteredData(chart.data as DataRow[]);
             }
             
             setSettings(chart.settings);
-            setAnnotations([]);
             
             notifySuccess('Gráfico carregado', `"${chart.name}" carregado para edição`);
           }
@@ -105,11 +102,11 @@ const ChartCreatorPage: React.FC = () => {
   // Create chart data object for UniversalChartRenderer
   const chartData: ChartData = {
     type: selectedChartType,
-    waterfall: filteredData,
+    waterfall: data,
     sankey: sankeyData,
-    stackedBar: filteredData,
-    line: filteredData,
-    area: filteredData,
+    stackedBar: data,
+    line: data,
+    area: data,
   };
 
   // Handle chart type change
@@ -118,15 +115,12 @@ const ChartCreatorPage: React.FC = () => {
       const newSankeyData = getSankeySampleData();
       setSankeyData(newSankeyData);
       setData([]);
-      setFilteredData([]);
     } else {
       const newSampleData = getSampleDataForChartType(newType);
       setData(newSampleData);
-      setFilteredData(newSampleData);
     }
     
     setSelectedChartType(newType);
-    setAnnotations([]);
     setSettings(defaultSettings);
     
     notifySuccess(`Tipo de gráfico alterado`, `Alterado para ${newType}`);
@@ -138,12 +132,9 @@ const ChartCreatorPage: React.FC = () => {
       const newSankeyData = getSankeySampleData();
       setSankeyData(newSankeyData);
       setData([]);
-      setFilteredData([]);
     } else {
       const sampleData = getSampleDataForChartType(chartType);
       setData(sampleData);
-      setFilteredData(sampleData);
-      setAnnotations([]);
       setSettings(defaultSettings);
     }
     
@@ -162,7 +153,7 @@ const ChartCreatorPage: React.FC = () => {
         name: chartName,
         description: chartDescription,
         chartType: selectedChartType,
-        data: selectedChartType === 'sankey' ? sankeyData : filteredData,
+        data: selectedChartType === 'sankey' ? sankeyData : data,
         settings,
         tags: [selectedChartType, 'custom'],
       };
@@ -245,9 +236,22 @@ const ChartCreatorPage: React.FC = () => {
     notifySuccess('CSV importado', `${importedData.length} linhas importadas`);
   };
 
+  const handleUniversalDataImported = (importedData: DataRow[] | SankeyData) => {
+    if (selectedChartType === 'sankey') {
+      setSankeyData(importedData as SankeyData);
+      setData([]);
+      notifySuccess('Dados Sankey importados', `${(importedData as SankeyData).nodes.length} nós e ${(importedData as SankeyData).links.length} conexões`);
+    } else {
+      const dataArray = importedData as DataRow[];
+      setData(dataArray);
+      notifySuccess('Dados importados', `${dataArray.length} linhas importadas`);
+    }
+    setShowUniversalImporter(false);
+  };
+
   const handleSaveView = async (name: string, description: string, thumbnail?: string) => {
     try {
-      await saveView(name, description, filteredData, settings, thumbnail);
+      await saveView(name, description, data, settings, thumbnail);
       notifySuccess('Visualização salva', `"${name}" foi salva com sucesso`);
     } catch (error) {
       notifyError('Erro ao salvar visualização', 'Não foi possível salvar a visualização');
@@ -326,32 +330,9 @@ const ChartCreatorPage: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Sidebar */}
-        <div className="lg:col-span-2 xl:col-span-2 space-y-6">
-          {/* Chart Type Selector */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <ChartTypeSelector
-              selectedType={selectedChartType}
-              onTypeChange={handleChartTypeChange}
-              onLoadSampleData={handleLoadSampleData}
-            />
-          </div>
-          
-          <FilterPanel 
-            data={data}
-            onFilteredDataChange={setFilteredData}
-          />
-          
-          <AnnotationsManager
-            data={filteredData}
-            annotations={annotations}
-            onAnnotationsChange={setAnnotations}
-          />
-        </div>
-
+      <div className="space-y-6">
         {/* Main Chart Area */}
-        <div className="lg:col-span-10 xl:col-span-10 space-y-6">
+        <div className="space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -370,15 +351,18 @@ const ChartCreatorPage: React.FC = () => {
               {/* Toolbar */}
               <Toolbar
                 chartType={selectedChartType}
-                onImportCSV={() => setShowCSVImporter(true)}
-                onExportPNG={handleExportPNG}
-                onExportSVG={handleExportSVG}
-                onExportJSON={handleExportJSON}
-                onExportHTML={handleExportHTML}
+                onImportCSV={() => {
+                  if (selectedChartType === 'sankey') {
+                    setShowUniversalImporter(true);
+                  } else {
+                    setShowCSVImporter(true);
+                  }
+                }}
+                onShowExportModal={() => setShowExportModal(true)}
                 onSaveView={() => setShowSaveModal(true)}
                 onManageViews={() => setShowViewsManager(true)}
                 onShowChartSettings={() => setShowChartSettings(true)}
-                onSaveChart={handleSaveChart}
+                onShowChartTypeSelector={() => setShowChartTypeSelector(true)}
               />
             </div>
             
@@ -398,11 +382,6 @@ const ChartCreatorPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Data Editor */}
-      <div>
-        <DataEditor data={data} onDataChange={setData} />
-      </div>
-
       {/* Modals */}
       {showCSVImporter && (
         <CSVImporter
@@ -412,12 +391,25 @@ const ChartCreatorPage: React.FC = () => {
         />
       )}
 
+      {showUniversalImporter && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <UniversalImporter
+              chartType={selectedChartType}
+              onDataImported={handleUniversalDataImported}
+              onClose={() => setShowUniversalImporter(false)}
+              className="w-full"
+            />
+          </div>
+        </div>
+      )}
+
       {showSaveModal && (
         <SaveViewModal
           isOpen={showSaveModal}
           onClose={() => setShowSaveModal(false)}
           onSave={handleSaveView}
-          data={filteredData}
+          data={data}
           settings={settings}
           chartRef={chartRef}
         />
@@ -429,6 +421,27 @@ const ChartCreatorPage: React.FC = () => {
           onClose={() => setShowViewsManager(false)}
           onLoadView={handleLoadView}
           onCreateNew={() => setShowViewsManager(false)}
+        />
+      )}
+
+      {showChartTypeSelector && (
+        <ChartTypeSelectorModal
+          isOpen={showChartTypeSelector}
+          onClose={() => setShowChartTypeSelector(false)}
+          selectedType={selectedChartType}
+          onTypeChange={handleChartTypeChange}
+          onLoadSampleData={handleLoadSampleData}
+        />
+      )}
+
+      {showExportModal && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onExportPNG={handleExportPNG}
+          onExportSVG={handleExportSVG}
+          onExportJSON={handleExportJSON}
+          onExportHTML={handleExportHTML}
         />
       )}
     </div>

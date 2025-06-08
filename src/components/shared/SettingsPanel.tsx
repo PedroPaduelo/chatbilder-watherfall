@@ -12,12 +12,14 @@ import {
   Maximize2,
   Edit3
 } from 'lucide-react';
-import type { ChartSettings } from '../../types';
+import type { ChartSettings, ChartType } from '../../types';
 import { defaultSettings } from '../../utils/constants';
+import { chartTypes } from '../charts/ChartTypeSelector';
 
 interface SettingsPanelProps {
   settings: ChartSettings;
   onSettingsChange: (settings: ChartSettings) => void;
+  chartType: ChartType;
 }
 
 interface SettingSectionProps {
@@ -193,7 +195,11 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ label, value, onChange }) => 
   );
 };
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChange }) => {
+const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChange, chartType }) => {
+  // Get supported features for current chart type
+  const currentChartConfig = chartTypes.find(chart => chart.id === chartType);
+  const supportedFeatures = currentChartConfig?.supportedFeatures || chartTypes[0].supportedFeatures;
+
   const handleChange = (field: string, value: unknown) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
@@ -244,33 +250,35 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
         </div>
         
         <div className="space-y-4">
-          {/* Dimensões e Layout */}
-          <SettingSection
-            title="Dimensões e Layout"
-            icon={<Sliders className="text-purple-600" size={16} />}
-            tooltip="Configure o tamanho e espaçamento das barras"
-            defaultExpanded={false}
-          >
-            <RangeSlider
-              label="Largura das Barras"
-              value={settings.barWidth}
-              min={20}
-              max={100}
-              unit="px"
-              onChange={value => handleChange('barWidth', value)}
-              tooltip="Largura de cada barra do gráfico"
-            />
-            
-            <RangeSlider
-              label="Espaçamento entre Barras"
-              value={settings.barSpacing}
-              min={0}
-              max={50}
-              unit="px"
-              onChange={value => handleChange('barSpacing', value)}
-              tooltip="Distância entre as barras adjacentes"
-            />
-          </SettingSection>
+          {/* Dimensões e Layout - Only for charts with bars */}
+          {(chartType === 'waterfall' || chartType === 'stacked-bar') && (
+            <SettingSection
+              title="Dimensões e Layout"
+              icon={<Sliders className="text-purple-600" size={16} />}
+              tooltip="Configure o tamanho e espaçamento das barras"
+              defaultExpanded={false}
+            >
+              <RangeSlider
+                label="Largura das Barras"
+                value={settings.barWidth}
+                min={20}
+                max={100}
+                unit="px"
+                onChange={value => handleChange('barWidth', value)}
+                tooltip="Largura de cada barra do gráfico"
+              />
+              
+              <RangeSlider
+                label="Espaçamento entre Barras"
+                value={settings.barSpacing}
+                min={0}
+                max={50}
+                unit="px"
+                onChange={value => handleChange('barSpacing', value)}
+                tooltip="Distância entre as barras adjacentes"
+              />
+            </SettingSection>
+          )}
 
           {/* Elementos Visuais */}
           <SettingSection
@@ -279,60 +287,74 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
             tooltip="Configure quais elementos mostrar no gráfico"
             defaultExpanded={false}
           >
-            <CheckboxToggle
-              label="Conectores"
-              checked={settings.showConnectors}
-              onChange={checked => handleChange('showConnectors', checked)}
-              tooltip="Linhas que conectam as barras mostrando o fluxo"
-            />
-            
-            <CheckboxToggle
-              label="Valores"
-              checked={settings.showValues}
-              onChange={checked => handleChange('showValues', checked)}
-              tooltip="Números dos valores nas barras"
-            />
-            
-            <CheckboxToggle
-              label="Categorias"
-              checked={settings.showCategories}
-              onChange={checked => handleChange('showCategories', checked)}
-              tooltip="Nomes das categorias abaixo das barras"
-            />
-
-            {settings.showCategories && (
-              <RangeSlider
-                label="Rotação das Categorias"
-                value={settings.categoryLabelRotation}
-                min={0}
-                max={90}
-                step={15}
-                unit="°"
-                onChange={value => handleChange('categoryLabelRotation', value)}
-                tooltip="Ângulo de rotação dos rótulos das categorias"
+            {supportedFeatures.connectors && (
+              <CheckboxToggle
+                label="Conectores"
+                checked={settings.showConnectors}
+                onChange={checked => handleChange('showConnectors', checked)}
+                tooltip="Linhas que conectam as barras mostrando o fluxo"
               />
             )}
             
-            <CheckboxToggle
-              label="Labels dos Segmentos"
-              checked={settings.showSegmentLabels}
-              onChange={checked => handleChange('showSegmentLabels', checked)}
-              tooltip="Rótulos dentro dos segmentos empilhados"
-            />
+            {supportedFeatures.values && (
+              <CheckboxToggle
+                label="Valores"
+                checked={settings.showValues}
+                onChange={checked => handleChange('showValues', checked)}
+                tooltip="Números dos valores nas barras"
+              />
+            )}
             
-            <CheckboxToggle
-              label="Linhas de Grade"
-              checked={settings.showGridlines}
-              onChange={checked => handleChange('showGridlines', checked)}
-              tooltip="Linhas horizontais de referência"
-            />
+            {supportedFeatures.categories && (
+              <>
+                <CheckboxToggle
+                  label="Categorias"
+                  checked={settings.showCategories}
+                  onChange={checked => handleChange('showCategories', checked)}
+                  tooltip="Nomes das categorias abaixo das barras"
+                />
+
+                {settings.showCategories && (
+                  <RangeSlider
+                    label="Rotação das Categorias"
+                    value={settings.categoryLabelRotation}
+                    min={0}
+                    max={90}
+                    step={15}
+                    unit="°"
+                    onChange={value => handleChange('categoryLabelRotation', value)}
+                    tooltip="Ângulo de rotação dos rótulos das categorias"
+                  />
+                )}
+              </>
+            )}
             
-            <CheckboxToggle
-              label="Eixos X e Y"
-              checked={settings.showAxes}
-              onChange={checked => handleChange('showAxes', checked)}
-              tooltip="Linhas dos eixos horizontal (X) e vertical (Y)"
-            />
+            {supportedFeatures.stackedSegments && (
+              <CheckboxToggle
+                label="Labels dos Segmentos"
+                checked={settings.showSegmentLabels}
+                onChange={checked => handleChange('showSegmentLabels', checked)}
+                tooltip="Rótulos dentro dos segmentos empilhados"
+              />
+            )}
+            
+            {supportedFeatures.gridlines && (
+              <CheckboxToggle
+                label="Linhas de Grade"
+                checked={settings.showGridlines}
+                onChange={checked => handleChange('showGridlines', checked)}
+                tooltip="Linhas horizontais de referência"
+              />
+            )}
+            
+            {supportedFeatures.axes && (
+              <CheckboxToggle
+                label="Eixos X e Y"
+                checked={settings.showAxes}
+                onChange={checked => handleChange('showAxes', checked)}
+                tooltip="Linhas dos eixos horizontal (X) e vertical (Y)"
+              />
+            )}
           </SettingSection>
 
           {/* Formatação de Valores */}
@@ -700,6 +722,70 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingsChang
               </div>
             )}
           </SettingSection>
+
+          {/* Configurações específicas do Sankey */}
+          {chartType === 'sankey' && (
+            <SettingSection
+              title="Configurações do Sankey"
+              icon={<Edit3 className="text-indigo-600" size={16} />}
+              tooltip="Configurações específicas para diagramas Sankey"
+              defaultExpanded={false}
+            >
+              <RangeSlider
+                label="Largura dos Nós"
+                value={settings.sankeySettings?.nodeWidth || 20}
+                min={10}
+                max={50}
+                unit="px"
+                onChange={value => handleChange('sankeySettings.nodeWidth', value)}
+                tooltip="Largura dos nós no diagrama Sankey"
+              />
+              
+              <RangeSlider
+                label="Espaçamento entre Nós"
+                value={settings.sankeySettings?.nodeSpacing || 10}
+                min={5}
+                max={30}
+                unit="px"
+                onChange={value => handleChange('sankeySettings.nodeSpacing', value)}
+                tooltip="Espaçamento vertical entre os nós"
+              />
+              
+              <RangeSlider
+                label="Iterações do Layout"
+                value={settings.sankeySettings?.iterations || 32}
+                min={16}
+                max={64}
+                step={16}
+                onChange={value => handleChange('sankeySettings.iterations', value)}
+                tooltip="Número de iterações para otimizar o layout do diagrama"
+              />
+              
+              <RangeSlider
+                label="Opacidade dos Links"
+                value={settings.sankeySettings?.linkOpacity || 0.6}
+                min={0.1}
+                max={1}
+                step={0.1}
+                onChange={value => handleChange('sankeySettings.linkOpacity', value)}
+                tooltip="Transparência das conexões do diagrama"
+              />
+              
+              <CheckboxToggle
+                label="Mostrar Rótulos dos Nós"
+                checked={settings.sankeySettings?.showNodeLabels || true}
+                onChange={checked => handleChange('sankeySettings.showNodeLabels', checked)}
+                tooltip="Exibir nomes dos nós no diagrama"
+              />
+              
+              <CheckboxToggle
+                label="Mostrar Valores dos Nós"
+                checked={settings.sankeySettings?.showNodeValues || true}
+                onChange={checked => handleChange('sankeySettings.showNodeValues', checked)}
+                tooltip="Exibir valores numéricos nos nós"
+              />
+            </SettingSection>
+          )}
         </div>
       </div>
     </div>

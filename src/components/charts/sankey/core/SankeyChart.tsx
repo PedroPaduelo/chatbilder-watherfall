@@ -11,8 +11,8 @@ import SankeyControls from './SankeyControls';
 const SankeyChart: React.FC<SankeyChartProps> = ({
   data,
   settings,
-  width = 900,
-  height = 500,
+  width = 1000,
+  height = 600,
   onNodeClick,
   onLinkClick,
   onSelectionChange,

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Download, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import type { SankeyData, SankeyNode, SankeyLink } from '../types';
-import { generateSampleSankeyData } from '../utils';
+import { validateSankeyData } from '../utils';
 
 interface SankeyImportProps {
   onDataImport: (data: SankeyData) => void;
@@ -30,32 +30,29 @@ const SankeyImport: React.FC<SankeyImportProps> = ({ onDataImport, onError }) =>
     ]
   };
 
-  // Dados de exemplo
+  // Dados de exemplo - fluxo de vendas mais simples e visual
   const sampleData: SankeyData = {
     nodes: [
-      { id: 'energy_source', name: 'Fontes de Energia', value: 1000 },
-      { id: 'coal', name: 'Carvão', value: 400 },
-      { id: 'natural_gas', name: 'Gás Natural', value: 300 },
-      { id: 'renewable', name: 'Renováveis', value: 300 },
-      { id: 'electricity', name: 'Eletricidade', value: 900 },
-      { id: 'heat', name: 'Aquecimento', value: 100 },
-      { id: 'residential', name: 'Residencial', value: 400 },
-      { id: 'commercial', name: 'Comercial', value: 300 },
-      { id: 'industrial', name: 'Industrial', value: 300 }
+      { id: 'visitantes', name: 'Visitantes', value: 1000 },
+      { id: 'interesse', name: 'Interessados', value: 600 },
+      { id: 'leads', name: 'Leads', value: 300 },
+      { id: 'prospects', name: 'Prospects', value: 150 },
+      { id: 'clientes', name: 'Clientes', value: 50 },
+      { id: 'desktop', name: 'Desktop', value: 700 },
+      { id: 'mobile', name: 'Mobile', value: 300 },
+      { id: 'email', name: 'Email', value: 200 },
+      { id: 'social', name: 'Redes Sociais', value: 100 }
     ],
     links: [
-      { source: 'energy_source', target: 'coal', value: 400 },
-      { source: 'energy_source', target: 'natural_gas', value: 300 },
-      { source: 'energy_source', target: 'renewable', value: 300 },
-      { source: 'coal', target: 'electricity', value: 350 },
-      { source: 'coal', target: 'heat', value: 50 },
-      { source: 'natural_gas', target: 'electricity', value: 250 },
-      { source: 'natural_gas', target: 'heat', value: 50 },
-      { source: 'renewable', target: 'electricity', value: 300 },
-      { source: 'electricity', target: 'residential', value: 300 },
-      { source: 'electricity', target: 'commercial', value: 300 },
-      { source: 'electricity', target: 'industrial', value: 300 },
-      { source: 'heat', target: 'residential', value: 100 }
+      { source: 'visitantes', target: 'desktop', value: 700 },
+      { source: 'visitantes', target: 'mobile', value: 300 },
+      { source: 'desktop', target: 'interesse', value: 420 },
+      { source: 'mobile', target: 'interesse', value: 180 },
+      { source: 'interesse', target: 'email', value: 200 },
+      { source: 'interesse', target: 'social', value: 100 },
+      { source: 'interesse', target: 'leads', value: 300 },
+      { source: 'leads', target: 'prospects', value: 150 },
+      { source: 'prospects', target: 'clientes', value: 50 }
     ]
   };
 
@@ -77,12 +74,12 @@ const SankeyImport: React.FC<SankeyImportProps> = ({ onDataImport, onError }) =>
         throw new Error('Formato de arquivo não suportado. Use JSON ou CSV.');
       }
 
-      const { data: processedData, validation } = processRawSankeyData(data);
+      const validation = validateSankeyData(data);
       
       setValidationResult(validation);
 
       if (validation.isValid) {
-        onDataImport(processedData);
+        onDataImport(data);
       } else {
         onError(`Dados inválidos: ${validation.errors.join(', ')}`);
       }
@@ -163,10 +160,10 @@ const SankeyImport: React.FC<SankeyImportProps> = ({ onDataImport, onError }) =>
 
   // Carregar dados de exemplo
   const loadSampleData = () => {
-    const { data: processedData, validation } = processRawSankeyData(sampleData);
+    const validation = validateSankeyData(sampleData);
     setValidationResult(validation);
     if (validation.isValid) {
-      onDataImport(processedData);
+      onDataImport(sampleData);
     }
   };
 

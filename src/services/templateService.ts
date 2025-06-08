@@ -93,25 +93,39 @@ export class TemplateService {
   static generateSankeyJSON(): string {
     const template = {
       nodes: [
-        { id: 'source1', name: 'Tráfego Orgânico', color: '#3B82F6' },
-        { id: 'source2', name: 'Tráfego Pago', color: '#10B981' },
-        { id: 'source3', name: 'Redes Sociais', color: '#F59E0B' },
-        { id: 'middle1', name: 'Página Inicial', color: '#8B5CF6' },
-        { id: 'middle2', name: 'Página de Produto', color: '#EC4899' },
-        { id: 'target1', name: 'Conversão', color: '#059669' },
-        { id: 'target2', name: 'Abandono', color: '#DC2626' }
+        { id: 'visitors', name: 'Visitantes Totais', value: 100000 },
+        { id: 'organic', name: 'Orgânico', value: 50000 },
+        { id: 'paid', name: 'Pago', value: 30000 },
+        { id: 'social', name: 'Social', value: 20000 },
+        { id: 'homepage', name: 'Home', value: 45000 },
+        { id: 'products', name: 'Produtos', value: 35000 },
+        { id: 'blog', name: 'Blog', value: 20000 },
+        { id: 'conversion', name: 'Conversão', value: 15000 },
+        { id: 'bounce', name: 'Saída', value: 85000 }
       ],
       links: [
-        { source: 'source1', target: 'middle1', value: 5000 },
-        { source: 'source1', target: 'middle2', value: 3000 },
-        { source: 'source2', target: 'middle1', value: 2000 },
-        { source: 'source2', target: 'middle2', value: 1500 },
-        { source: 'source3', target: 'middle1', value: 1000 },
-        { source: 'source3', target: 'middle2', value: 800 },
-        { source: 'middle1', target: 'target1', value: 2500 },
-        { source: 'middle1', target: 'target2', value: 5500 },
-        { source: 'middle2', target: 'target1', value: 1800 },
-        { source: 'middle2', target: 'target2', value: 3500 }
+        { source: 'visitors', target: 'organic', value: 50000 },
+        { source: 'visitors', target: 'paid', value: 30000 },
+        { source: 'visitors', target: 'social', value: 20000 },
+        
+        { source: 'organic', target: 'homepage', value: 25000 },
+        { source: 'organic', target: 'products', value: 15000 },
+        { source: 'organic', target: 'blog', value: 10000 },
+        
+        { source: 'paid', target: 'homepage', value: 15000 },
+        { source: 'paid', target: 'products', value: 15000 },
+        
+        { source: 'social', target: 'homepage', value: 5000 },
+        { source: 'social', target: 'products', value: 5000 },
+        { source: 'social', target: 'blog', value: 10000 },
+        
+        { source: 'homepage', target: 'conversion', value: 9000 },
+        { source: 'homepage', target: 'bounce', value: 36000 },
+        
+        { source: 'products', target: 'conversion', value: 6000 },
+        { source: 'products', target: 'bounce', value: 29000 },
+        
+        { source: 'blog', target: 'bounce', value: 20000 }
       ]
     };
     

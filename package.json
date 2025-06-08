@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/d3": "^7.4.3",
     "@types/react-router-dom": "^5.3.3",
+    "d3": "^7.9.0",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.460.0",
     "papaparse": "^5.4.1",

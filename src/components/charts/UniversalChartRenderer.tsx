@@ -2,11 +2,12 @@ import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import type { ChartType, ChartData, ChartSettings, ChartDimensions, DataRow } from '../../types';
 import { WaterfallChart } from './waterfall';
-import SankeyChart from './sankey/core/SankeyChart';
+import SankeyD3Chart from './sankey/core/SankeyD3Chart';
 import { StackedBarChart } from './stacked-bar';
 import { LineChart } from './line';
 import { AreaChart } from './area';
 import ConfigModal from '../shared/ConfigModal';
+import { defaultSankeySettings } from './sankey/utils';
 
 interface UniversalChartRendererProps {
   chartType: ChartType;
@@ -83,12 +84,27 @@ const UniversalChartRenderer: React.FC<UniversalChartRendererProps> = ({
         );
       
       case 'sankey':
+        // Ensure proper SankeySettings structure
+        const sankeySettings = {
+          ...defaultSankeySettings,
+          ...(settings.sankeySettings || {})
+        };
+
         return (
-          <SankeyChart
+          <SankeyD3Chart
             data={chartData as any}
-            settings={settings.sankeySettings || settings as any}
+            settings={sankeySettings as any}
             width={dimensions.width}
             height={dimensions.height}
+            onSettingsChange={(newSettings) => {
+              handleSettingsChange({
+                ...settings,
+                sankeySettings: {
+                  ...settings.sankeySettings,
+                  ...newSettings
+                }
+              });
+            }}
           />
         );
       
@@ -144,6 +160,7 @@ const UniversalChartRenderer: React.FC<UniversalChartRendererProps> = ({
         }}
         settings={settings}
         onSettingsChange={handleSettingsChange}
+        chartType={chartType}
       />
       
       {/* Renderização do gráfico */}

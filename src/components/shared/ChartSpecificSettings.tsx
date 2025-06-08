@@ -212,7 +212,7 @@ const ChartSpecificSettings: React.FC<ChartSpecificSettingsProps> = ({
               </div>
               
               <SankeyChartConfig
-                settings={(localSettings.sankeySettings as SankeySettings) || defaultSankeySettings}
+                settings={((localSettings.sankeySettings as unknown) as SankeySettings) || defaultSankeySettings}
                 onSettingsChange={handleSankeySettingsChange}
                 onReset={resetToDefaults}
                 onPresetApply={() => {}}
